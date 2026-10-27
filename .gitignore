@@ -1,0 +1,35 @@
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Datasets and raw drone images (exclude heavy data)
+project_requirements/dataset/
+project_requirements/drone_dataset/
+**/UAV/
+**/drone_dataset/
+**/dataset/
+
+# Large binary weights & raw array caches (>10MB)
+*.pth
+*.npz
+**/cache/
+*.pkl.bak
+
+# Presentations and backup files
+*.bak
+*.tmp
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

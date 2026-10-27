@@ -1,0 +1,5 @@
+Phys_Config_ID,Loc_Weight_Mode,max_depth,Val_RMSE,LOLO_4City_RMSE,LOLO_Mean_City_Bias,Selection_Score
+P0_LocWeighted_Depth3,True,3,23.5823,56.1744,49.7382,43.1376
+P3_SqrtLocWeight_Shallow_D2,sqrt,2,24.2683,56.3652,50.2631,43.5265
+P2_Unweighted_Shallow_D2_HeavyReg,False,2,24.2379,57.7641,52.3133,44.3536
+P1_Unweighted_Depth3,False,3,23.7377,58.2853,53.0696,44.4662

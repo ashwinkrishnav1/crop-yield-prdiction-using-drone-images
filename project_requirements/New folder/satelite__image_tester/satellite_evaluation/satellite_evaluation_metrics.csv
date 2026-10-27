@@ -1,0 +1,2 @@
+Model_Stage,Num_Features,ZeroShot_Test_RMSE,ZeroShot_Test_MAE,ZeroShot_Test_R2,ZeroShot_Full4Loc_RMSE,ZeroShot_Full4Loc_R2,Test_Pearson_r,Test_Full4Loc_r,Calibrated_RMSE,Calibrated_R2,Val_RMSE,Val_R2
+"1. SATELLITE-ONLY (TP1–TP6, 6-Band + EffNetB0)",70,36.6624,31.5206,-1.2071,31.9933,-0.6808,0.5382,0.5739,20.9612,0.282,22.6569,0.8356

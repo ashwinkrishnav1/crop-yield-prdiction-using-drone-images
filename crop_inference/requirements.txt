@@ -1,0 +1,8 @@
+# Use the SAME versions you trained with (the .pkl model bundles are version-sensitive):  pip freeze | findstr /i "xgboost scikit torch numpy pandas"
+numpy
+pandas
+scikit-learn
+xgboost
+opencv-python
+torch
+torchvision

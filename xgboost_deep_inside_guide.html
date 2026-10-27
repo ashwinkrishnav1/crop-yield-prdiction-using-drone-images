@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaizeSight • Deep Inside XGBoost: How Gradient Boosting Predicts Yield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030d1a;
+      --card: #08192e;
+      --card2: #0d233f;
+      --border: #13385e;
+      --border-hi: #1e538a;
+      --blue: #38bdf8;
+      --blue-g: rgba(56,189,248,0.22);
+      --gold: #f59e0b;
+      --gold-g: rgba(245,158,11,0.22);
+      --emerald: #10b981;
+      --emerald-g: rgba(16,185,129,0.22);
+      --coral: #f43f5e;
+      --coral-g: rgba(244,63,94,0.22);
+      --purple: #a855f7;
+      --white: #f8fafc;
+      --muted: #94a3b8;
+      --dim: #64748b;
+      --r: 12px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--white);line-height:1.65;padding-bottom:80px;}
+
+    /* STICKY NAV */
+    .topbar{position:sticky;top:0;z-index:100;background:rgba(3,13,26,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;overflow-x:auto;}
+    .logo{font-weight:800;font-size:1rem;white-space:nowrap;color:var(--blue);}
+    .navbtn{background:none;border:1px solid transparent;color:var(--muted);padding:5px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;}
+    .navbtn:hover{background:var(--card);color:#fff;}
+    .navbtn.on{background:var(--card);border-color:var(--blue);color:#fff;box-shadow:0 0 8px var(--blue-g);}
+
+    .wrap{max-width:1100px;margin:0 auto;padding:0 18px;}
+
+    /* HERO */
+    .hero{text-align:center;padding:44px 16px 32px;}
+    .badge{display:inline-block;padding:3px 12px;border-radius:999px;background:rgba(56,189,248,0.15);border:1px solid var(--blue);color:var(--blue);font-size:0.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+    .hero h1{font-size:2.4rem;font-weight:800;letter-spacing:-.6px;line-height:1.15;margin-bottom:10px;background:linear-gradient(135deg,#fff 30%,var(--blue) 80%,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .hero p{color:var(--muted);font-size:1.05rem;max-width:760px;margin:0 auto;}
+
+    /* SECTION */
+    .sec{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:26px;margin-bottom:32px;box-shadow:0 12px 35px rgba(0,0,0,.4);transition:border-color .3s;}
+    .sec:hover{border-color:var(--border-hi);}
+    .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+    .pill{background:var(--blue);color:#031326;font-weight:800;font-size:.72rem;padding:3px 10px;border-radius:999px;text-transform:uppercase;}
+    .pill-gold{background:var(--gold);color:#1a0f00;}
+    .pill-emerald{background:var(--emerald);color:#021a10;}
+    .pill-coral{background:var(--coral);color:#fff;}
+    .pill-purple{background:var(--purple);color:#fff;}
+    .sec-title{font-size:1.35rem;font-weight:700;letter-spacing:-.3px;}
+    .sec-sub{color:var(--muted);font-size:.88rem;}
+
+    /* CALLOUT */
+    .callout{background:#061426;border-left:4px solid var(--gold);padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:18px;font-size:.92rem;}
+    .callout strong{color:var(--gold);}
+    .callout-blue{border-left-color:var(--blue);}
+    .callout-blue strong{color:var(--blue);}
+    .callout-emerald{border-left-color:var(--emerald);}
+    .callout-emerald strong{color:var(--emerald);}
+
+    /* FLOW ARROW */
+    .flow-arrow{text-align:center;font-size:1.6rem;color:var(--gold);margin:14px 0;letter-spacing:4px;}
+
+    /* BUTTONS */
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;}
+    .btn{background:var(--blue);color:#031326;border:none;padding:7px 14px;border-radius:6px;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;}
+    .btn:hover{background:#7dd3fc;transform:translateY(-1px);box-shadow:0 0 12px var(--blue-g);}
+    .btn-gold{background:var(--gold);color:#1a0f00;}
+    .btn-gold:hover{background:#fbbf24;}
+    .btn-emerald{background:var(--emerald);color:#021a10;}
+    .btn-emerald:hover{background:#34d399;}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--white);}
+    .btn-outline:hover{border-color:var(--blue);background:rgba(255,255,255,.04);}
+
+    /* TWO COL */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+    @media(max-width:850px){.two-col{grid-template-columns:1fr;}}
+
+    /* TREE DIAGRAM */
+    .tree-box{background:#040e1c;border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;}
+    .tree-node{display:inline-block;padding:8px 14px;background:#0c2647;border:2px solid var(--blue);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;color:#e0f2fe;margin:6px auto;}
+    .tree-node.active{border-color:var(--gold);background:#223c10;color:#fef08a;box-shadow:0 0 12px var(--gold-g);}
+    .tree-branches{display:flex;justify-content:space-around;gap:12px;margin-top:12px;position:relative;}
+    .tree-leaf{flex:1;background:#071c33;border:1px dashed var(--border);border-radius:8px;padding:10px 8px;font-size:.78rem;}
+    .tree-leaf.winner{border-color:var(--emerald);border-style:solid;background:rgba(16,185,129,.12);}
+    .leaf-val{font-family:'JetBrains Mono',monospace;font-size:1.15rem;font-weight:800;color:var(--emerald);margin:4px 0;}
+
+    /* RANGE SLIDER */
+    .range-input{width:100%;height:8px;border-radius:4px;background:#143354;outline:none;-webkit-appearance:none;margin:10px 0;}
+    .range-input::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;box-shadow:0 0 8px var(--blue-g);}
+    .range-input.emerald::-webkit-slider-thumb{background:var(--emerald);box-shadow:0 0 8px var(--emerald-g);}
+    .range-input.gold::-webkit-slider-thumb{background:var(--gold);box-shadow:0 0 8px var(--gold-g);}
+
+    /* RESULT CARD */
+    .res-card{background:linear-gradient(135deg,#0c2847,#143e6d);border:2px solid var(--blue);border-radius:var(--r);padding:20px;text-align:center;box-shadow:0 0 30px var(--blue-g);}
+    .res-big{font-family:'JetBrains Mono',monospace;font-size:2.6rem;font-weight:800;color:var(--blue);margin:6px 0;}
+
+    /* STEP CARDS */
+    .step-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+    .step-tag{font-family:'JetBrains Mono',monospace;font-size:.75rem;padding:3px 8px;border-radius:4px;background:#051322;color:var(--blue);border:1px solid var(--border);}
+    .err-badge{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:800;padding:4px 10px;border-radius:6px;}
+    .err-pos{background:rgba(244,63,94,.18);color:#fca5a5;border:1px solid #7f1d1d;}
+    .err-neg{background:rgba(56,189,248,.18);color:#7dd3fc;border:1px solid #0369a1;}
+    .err-good{background:rgba(16,185,129,.18);color:#6ee7b7;border:1px solid #065f46;}
+
+    /* TABLE */
+    .math-tbl{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;background:#040e1c;border-radius:8px;overflow:hidden;border:1px solid var(--border);margin:10px 0;}
+    .math-tbl th,.math-tbl td{padding:8px 10px;text-align:center;border-bottom:1px solid #0f2d4f;}
+    .math-tbl th{background:#0a213b;color:var(--muted);font-size:.7rem;text-transform:uppercase;}
+
+    .connector{text-align:center;padding:8px 0;position:relative;}
+    .connector::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--blue),var(--emerald));border-radius:2px;transform:translateX(-50%);}
+    .connector-label{position:relative;display:inline-block;background:var(--bg);padding:4px 14px;border-radius:999px;border:1px solid var(--border);font-size:.78rem;font-weight:700;color:var(--muted);}
+
+    .fade-in{opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s;}
+    .fade-in.visible{opacity:1;transform:translateY(0);}
+  </style>
+</head>
+<body>
+
+  <!-- STICKY NAV -->
+  <div class="topbar">
+    <span class="logo">⚡ XGBoost Masterclass</span>
+    <button class="navbtn on" onclick="goTo('x0')">💡 The Big Idea</button>
+    <button class="navbtn" onclick="goTo('x1')">🌳 1 Decision Tree</button>
+    <button class="navbtn" onclick="goTo('x2')">🎯 What is Boosting?</button>
+    <button class="navbtn" onclick="goTo('x3')">🧮 Live Error Math</button>
+    <button class="navbtn" onclick="goTo('x4')">🐢 Learning Rate (η)</button>
+    <button class="navbtn" onclick="goTo('x5')">🚀 Why "Extreme"?</button>
+    <button class="navbtn" onclick="goTo('x6')">🌽 Live Corn Predictor</button>
+    <button class="navbtn" onclick="goTo('x7')">🤝 CNN + XGBoost</button>
+  </div>
+
+  <div class="wrap">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="badge">Beginner-Friendly Interactive Masterclass</div>
+      <h1>Deep Inside XGBoost: How Gradient Boosting Predicts Crop Yield</h1>
+      <p>CNN looks at drone photos, but <strong>XGBoost looks at spreadsheet numbers</strong> (weather, rainfall, soil, and temperatures). Here is exactly how it builds a team of trees to predict the harvest with pinpoint accuracy.</p>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 0: THE BIG IDEA -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x0">
+      <div class="sec-head">
+        <span class="pill">Concept</span>
+        <div>
+          <h2 class="sec-title">What is XGBoost & Why Do We Use It?</h2>
+          <div class="sec-sub">CNNs are for images. XGBoost is the undisputed king of tables, spreadsheets, and numbers!</div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>The Two Brains of Our Project:</strong><br>
+        1. <strong>CNN (EfficientNet):</strong> Looks at the drone photo. Answers: <em>"How green is the leaf canopy? Are the plants damaged?"</em><br>
+        2. <strong>XGBoost (Extreme Gradient Boosting):</strong> Looks at the weather and soil table. Answers: <em>"Did it rain in July? Was there a heatwave? Given the weather and the CNN's greenness score, what is the harvest yield?"</em>
+      </div>
+
+      <div class="two-col">
+        <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <h4 style="color:var(--coral);margin-bottom:8px;">❌ What a Single Big Formula Does:</h4>
+          <p style="font-size:.88rem;color:var(--muted);">
+            Old linear regression uses a single rigid line: <code>Yield = 100 + (5 × Rain)</code>.<br><br>
+            <strong>Problem:</strong> Nature is NOT a straight line! If rain is 4 inches, yield is great. But if rain is 20 inches, the field floods and the crop drowns! A straight line cannot understand this twist.
+          </p>
+        </div>
+        <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <h4 style="color:var(--emerald);margin-bottom:8px;">✅ What XGBoost Does (Team of Simple Trees):</h4>
+          <p style="font-size:.88rem;color:var(--muted);">
+            XGBoost builds hundreds of tiny <strong>Decision Trees</strong> (if/else questions).<br><br>
+            It asks: <em>"Did it rain > 3 inches? Yes. But did it exceed 12 inches? No. Was max temp > 95°F? Yes."</em> Each tree asks simple yes/no questions, and together they capture complex agricultural rules!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">Step 1: Understand one single tree ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 1: A SINGLE DECISION TREE -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x1">
+      <div class="sec-head">
+        <span class="pill pill-gold">Building Block</span>
+        <div>
+          <h2 class="sec-title">A Single Decision Tree: Just a Flowchart of Yes/No Questions</h2>
+          <div class="sec-sub">Drag the sliders to watch how a single tree sorts a field into a predicted yield</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>A Decision Tree is simply a 20-questions game.</strong> It starts at the top (the Root), asks a question about the weather, and sends the field down the LEFT or RIGHT branch until it lands on a final number (called a <strong>Leaf</strong>).
+      </div>
+
+      <div class="two-col">
+        <!-- Interactive Controls -->
+        <div>
+          <h4 style="color:var(--blue);margin-bottom:10px;">Adjust Weather For Your Farm:</h4>
+          <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;">
+              <span>🌧️ July Rainfall:</span>
+              <strong style="color:var(--blue);font-family:'JetBrains Mono',monospace;" id="tRainVal">4.2 inches</strong>
+            </div>
+            <input type="range" class="range-input" id="tRain" min="0.5" max="8.0" step="0.1" value="4.2" oninput="runSingleTree()">
+            <div style="font-size:.72rem;color:var(--dim);">Question 1 checks if Rain &gt; 3.0 inches</div>
+          </div>
+
+          <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;">
+              <span>🌡️ July Max Temp:</span>
+              <strong style="color:var(--gold);font-family:'JetBrains Mono',monospace;" id="tTempVal">89 °F</strong>
+            </div>
+            <input type="range" class="range-input gold" id="tTemp" min="75" max="102" step="1" value="89" oninput="runSingleTree()">
+            <div style="font-size:.72rem;color:var(--dim);">Question 2 checks if Temp &gt; 92°F (Heat Stress)</div>
+          </div>
+        </div>
+
+        <!-- Tree Diagram -->
+        <div class="tree-box">
+          <div class="tree-node active" id="nd0">❓ Is July Rain &gt; 3.0 inches?</div>
+
+          <div class="tree-branches">
+            <!-- Left Branch: Rain <= 3 (Drought) -->
+            <div style="flex:1;">
+              <div style="font-size:.72rem;color:var(--coral);font-weight:700;">NO (Drought) ↙</div>
+              <div class="tree-leaf" id="lf0">
+                <div style="color:var(--muted);">Severe Drought Leaf</div>
+                <div class="leaf-val" style="color:var(--coral);">115 bu/ac</div>
+                <div style="font-size:.68rem;color:var(--dim);">Crops dried out</div>
+              </div>
+            </div>
+
+            <!-- Right Branch: Rain > 3 (Good Rain) -->
+            <div style="flex:2;">
+              <div style="font-size:.72rem;color:var(--emerald);font-weight:700;">YES (Good Rain) ↘</div>
+              <div class="tree-node" id="nd1" style="font-size:.74rem;padding:6px 10px;">❓ Is July Max Temp &gt; 92°F?</div>
+
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <div class="tree-leaf" id="lf1" style="flex:1;">
+                  <div style="font-size:.7rem;color:var(--gold);">YES (Heatwave) ↙</div>
+                  <div class="leaf-val" style="color:var(--gold);font-size:1rem;">152 bu/ac</div>
+                  <div style="font-size:.65rem;color:var(--dim);">Pollen damaged</div>
+                </div>
+                <div class="tree-leaf" id="lf2" style="flex:1;">
+                  <div style="font-size:.7rem;color:var(--emerald);">NO (Ideal) ↘</div>
+                  <div class="leaf-val" style="color:var(--emerald);font-size:1rem;">188 bu/ac</div>
+                  <div style="font-size:.65rem;color:var(--dim);">Perfect season!</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding:8px;background:#081b30;border-radius:6px;font-size:.82rem;" id="treeResultText">
+            Decision Path: Rain 4.2" (&gt; 3.0) ➜ Temp 89°F (≤ 92°F) ➜ <strong>Predicted: 188 bu/ac</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">Why one tree is not enough ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 2: WHAT IS BOOSTING? -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x2">
+      <div class="sec-head">
+        <span class="pill pill-emerald">Core Secret</span>
+        <div>
+          <h2 class="sec-title">What is "Boosting"? (Training on the ERRORS, Not the Target!)</h2>
+          <div class="sec-sub">This is the single most important concept in gradient boosting — understand this and you understand XGBoost!</div>
+        </div>
+      </div>
+
+      <div class="callout callout-emerald">
+        <strong>The Golf Analogy:</strong><br>
+        Imagine you are playing golf and trying to hit the ball into a hole 180 yards away.<br><br>
+        • <strong>Shot 1 (Tree 1):</strong> You hit the ball. It travels <strong>150 yards</strong>. You missed by <strong>30 yards</strong> (your ERROR is +30).<br>
+        • <strong>Shot 2 (Tree 2):</strong> Do you aim for 180 yards again? <strong>NO!</strong> You stand where the ball landed and aim ONLY for the remaining <strong>30 yards</strong>!<br>
+        • <strong>Shot 3 (Tree 3):</strong> Your second shot went 27 yards. Now you are only <strong>3 yards short</strong>. Your next tiny tap aims for 3 yards.<br><br>
+        <strong>That is Gradient Boosting!</strong> Tree 1 makes a baseline guess. Tree 2 is trained <em>specifically to predict the mistake (error) of Tree 1</em>. Tree 3 corrects the mistake of Tree 2. Every new tree fixes what the previous trees got wrong!
+      </div>
+
+      <div style="background:#061426;border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <h4 style="color:var(--gold);margin-bottom:8px;">The Technical Term: Residuals</h4>
+        <p style="font-size:.9rem;color:var(--muted);">
+          In data science, the mistake is called a <strong>Residual</strong>:
+        </p>
+        <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.15rem;font-weight:700;color:var(--white);background:#030d1a;padding:10px;border-radius:6px;margin:8px 0;border:1px solid var(--border);">
+          $$\text{Residual (Mistake)} = \text{Actual Harvest} - \text{Current Prediction}$$
+        </div>
+        <p style="font-size:.85rem;color:var(--muted);text-align:center;">
+          If actual harvest was 180 and Tree 1 guessed 150 $\rightarrow$ Residual is <strong style="color:#f87171;">+30</strong>. Tree 2 is trained to predict <strong style="color:#f87171;">+30</strong>!
+        </p>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">Watch the error shrink live ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 3: LIVE ERROR MATH -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x3">
+      <div class="sec-head">
+        <span class="pill pill-purple">Interactive</span>
+        <div>
+          <h2 class="sec-title">Interactive Walkthrough: Watch 3 Trees Correct the Harvest Error</h2>
+          <div class="sec-sub">Set an actual harvest yield and watch each tree chip away at the residual mistake</div>
+        </div>
+      </div>
+
+      <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:700;">Set the True Harvest for a Corn Field:</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:800;color:var(--emerald);" id="trueYieldVal">185.0 bu/ac</span>
+        </div>
+        <input type="range" class="range-input emerald" id="trueYieldSlider" min="110" max="220" step="1" value="185" oninput="simBoosting(this.value)">
+      </div>
+
+      <!-- Step Cards -->
+      <div id="boostSteps">
+        <!-- Step 0: Baseline -->
+        <div class="step-card">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="step-tag">Initial Base Guess</span>
+              <strong>Average of All Fields (No Tree Yet)</strong>
+            </div>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              Before looking at any weather or soil, guess the average yield across the whole Corn Belt: <code>150.0 bu/ac</code>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:.72rem;color:var(--dim);">Remaining Error:</div>
+            <div class="err-badge err-pos" id="err0">+35.0 bu/ac</div>
+          </div>
+        </div>
+
+        <!-- Step 1: Tree 1 -->
+        <div class="step-card">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="step-tag">Tree #1</span>
+              <strong>Looks at Rainfall</strong>
+            </div>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              Sees rainfall was abundant! Predicts an adjustment of <code style="color:var(--blue);" id="t1Adj">+20.0</code>.
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:.72rem;color:var(--dim);">New Prediction: <span id="p1Val">170.0</span> | Remaining Error:</div>
+            <div class="err-badge err-pos" id="err1">+15.0 bu/ac</div>
+          </div>
+        </div>
+
+        <!-- Step 2: Tree 2 -->
+        <div class="step-card">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="step-tag">Tree #2</span>
+              <strong>Looks at Temperature (Fixing Tree 1's Mistake)</strong>
+            </div>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              Sees temperatures were mild with zero heat stress. Adds another <code style="color:var(--blue);" id="t2Adj">+10.0</code>.
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:.72rem;color:var(--dim);">New Prediction: <span id="p2Val">180.0</span> | Remaining Error:</div>
+            <div class="err-badge err-pos" id="err2">+5.0 bu/ac</div>
+          </div>
+        </div>
+
+        <!-- Step 3: Tree 3 -->
+        <div class="step-card">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="step-tag">Tree #3</span>
+              <strong>Looks at Soil Clay & CNN Canopy (Micro-Adjustment)</strong>
+            </div>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              Fine-tunes the last few bushels using soil quality. Adds <code style="color:var(--blue);" id="t3Adj">+4.2</code>.
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:.72rem;color:var(--dim);">Final Prediction: <span id="p3Val" style="color:var(--emerald);font-weight:800;">184.2</span> | Error:</div>
+            <div class="err-badge err-good" id="err3">−0.8 bu/ac (Near Perfect!)</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">Why don't we correct 100% in one shot? ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 4: LEARNING RATE (SHRINKAGE) -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x4">
+      <div class="sec-head">
+        <span class="pill pill-gold">Safety Brakes</span>
+        <div>
+          <h2 class="sec-title">The Learning Rate (η / Eta): Taking Baby Steps So We Don't Crash</h2>
+          <div class="sec-sub">Why we only add 10% of each tree's prediction instead of 100%</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>The "Don't Oversteer" Rule:</strong><br>
+        If Tree 1 says: <em>"Add 30 bushels!"</em>, and you add all 30 bushels immediately, one weird fluke field (like a hail storm or a single broken sensor) could throw the entire model off a cliff.<br><br>
+        Instead, XGBoost applies a <strong>Learning Rate</strong> (usually $\eta = 0.1$ or $10\%$):<br>
+        $$\text{New Prediction} = \text{Old Prediction} + (0.10 \times \text{Tree's Suggestion})$$
+        Instead of jumping 30 bushels, it only steps forward <strong>3.0 bushels</strong>. By taking hundreds of cautious baby steps, XGBoost avoids overreacting to noise!
+      </div>
+
+      <div class="two-col">
+        <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <h4 style="color:var(--coral);margin-bottom:8px;">🚨 Learning Rate Too Big (η = 1.0):</h4>
+          <p style="font-size:.85rem;color:var(--muted);">
+            • Tree 1 overcorrects (+30)<br>
+            • Tree 2 panics and overcorrects the other way (−25)<br>
+            • Tree 3 overshoots again (+20)<br>
+            <strong>Result:</strong> Wild oscillations, memorizes flukes (Overfitting).
+          </p>
+        </div>
+        <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <h4 style="color:var(--emerald);margin-bottom:8px;">✅ Sweet Spot Learning Rate (η = 0.05 – 0.10):</h4>
+          <p style="font-size:.85rem;color:var(--muted);">
+            • Each tree nudges the prediction gently by 5% to 10%<br>
+            • After 100–300 trees, predictions glide smoothly right into the bullseye<br>
+            <strong>Result:</strong> Bulletproof generalization to new harvest seasons.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">What makes it "Extreme"? ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 5: WHY IS IT CALLED "EXTREME"? -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x5">
+      <div class="sec-head">
+        <span class="pill pill-coral">XG Upgrades</span>
+        <div>
+          <h2 class="sec-title">Why Is It Called "Extreme" Gradient Boosting?</h2>
+          <div class="sec-sub">What makes XGBoost 10× faster and more accurate than older gradient boosting libraries</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <strong style="color:var(--blue);">1. Second-Order Gradients (Hessian + Gradient):</strong>
+            <p style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              Older algorithms only know what <em>direction</em> to move (1st derivative). XGBoost calculates both the direction AND the <em>curvature</em> (2nd derivative / Hessian). It reaches the optimal answer in half the steps!
+            </p>
+          </div>
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <strong style="color:var(--gold);">2. Built-in Regularization (L1 & L2 penalties):</strong>
+            <p style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              If a tree tries to create a crazy branch just for 2 outlier fields, XGBoost's penalty term ($\gamma$ and $\lambda$) literally chops that branch off.
+            </p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <strong style="color:var(--emerald);">3. Automatic Handling of Missing Values:</strong>
+            <p style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              If a weather station broke and didn't record rainfall for 3 days, traditional models crash with an error. XGBoost learns an automatic "default branch" for missing values during training!
+            </p>
+          </div>
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <strong style="color:var(--purple);">4. Hardware Optimization & Parallel Splitting:</strong>
+            <p style="font-size:.82rem;color:var(--muted);margin-top:4px;">
+              Sorts all column numbers into fast cache memory and tests splits across all CPU cores simultaneously.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">Live simulation with real project inputs ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 6: LIVE CORN YIELD PREDICTOR -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x6">
+      <div class="sec-head">
+        <span class="pill pill-emerald">Live Simulator</span>
+        <div>
+          <h2 class="sec-title">Live XGBoost Corn Yield Simulator</h2>
+          <div class="sec-sub">Adjust the 5 core features used in our actual project model and see the ensemble calculate yield live!</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Sliders -->
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <h4 style="color:var(--blue);">Adjust Field & Weather Conditions:</h4>
+
+          <div style="background:#051426;padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;">
+              <span>🌧️ Total Season Rain (inches)</span>
+              <strong style="color:var(--blue);font-family:'JetBrains Mono',monospace;" id="sRainTxt">18.5 in</strong>
+            </div>
+            <input type="range" class="range-input" id="sRain" min="6" max="32" step="0.5" value="18.5" oninput="runXGBModel()">
+          </div>
+
+          <div style="background:#051426;padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;">
+              <span>☀️ Growing Degree Days (GDD)</span>
+              <strong style="color:var(--gold);font-family:'JetBrains Mono',monospace;" id="sGddTxt">2650 °F-days</strong>
+            </div>
+            <input type="range" class="range-input gold" id="sGdd" min="1800" max="3400" step="50" value="2650" oninput="runXGBModel()">
+          </div>
+
+          <div style="background:#051426;padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;">
+              <span>🔥 Extreme Heat Days (&gt;93°F)</span>
+              <strong style="color:var(--coral);font-family:'JetBrains Mono',monospace;" id="sHeatTxt">4 days</strong>
+            </div>
+            <input type="range" class="range-input" style="accent-color:var(--coral);" id="sHeat" min="0" max="25" step="1" value="4" oninput="runXGBModel()">
+          </div>
+
+          <div style="background:#051426;padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;">
+              <span>🌱 Soil Quality / Clay %</span>
+              <strong style="color:var(--purple);font-family:'JetBrains Mono',monospace;" id="sSoilTxt">24 %</strong>
+            </div>
+            <input type="range" class="range-input" style="accent-color:var(--purple);" id="sSoil" min="10" max="45" step="1" value="24" oninput="runXGBModel()">
+          </div>
+
+          <div style="background:#051426;padding:10px 14px;border-radius:8px;border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;">
+              <span>🛸 CNN Canopy Greenness Score (From Drone!)</span>
+              <strong style="color:var(--emerald);font-family:'JetBrains Mono',monospace;" id="sCnnTxt">0.82</strong>
+            </div>
+            <input type="range" class="range-input emerald" id="sCnn" min="0.1" max="1.0" step="0.02" value="0.82" oninput="runXGBModel()">
+          </div>
+        </div>
+
+        <!-- Ensemble Result -->
+        <div>
+          <div class="res-card">
+            <div style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">XGBoost Ensemble Output</div>
+            <div class="res-big" id="xgbFinalYield">176.4</div>
+            <div style="font-size:1.05rem;font-weight:700;color:var(--gold);margin-bottom:10px;">Bushels Per Acre</div>
+            <div id="xgbStatusBadge" style="display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:.82rem;background:rgba(16,185,129,.2);color:#34d399;border:1px solid var(--emerald);">Above Average Harvest</div>
+
+            <div style="margin-top:16px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:.75rem;background:#051424;padding:12px;border-radius:6px;border:1px solid var(--border);line-height:1.8;">
+              <div style="color:var(--dim);border-bottom:1px solid #143555;padding-bottom:4px;margin-bottom:4px;">TREE ENSEMBLE CONTRIBUTION:</div>
+              <div>Base Guess: <span style="float:right;color:#fff;">145.0 bu/ac</span></div>
+              <div>Rain Trees (35 trees): <span style="float:right;" id="cRain">+14.2 bu/ac</span></div>
+              <div>GDD & Temp Trees (40 trees): <span style="float:right;" id="cGdd">+6.1 bu/ac</span></div>
+              <div>Heat Stress Trees (20 trees): <span style="float:right;" id="cHeat">−3.8 bu/ac</span></div>
+              <div>Soil Quality Trees (25 trees): <span style="float:right;" id="cSoil">+3.4 bu/ac</span></div>
+              <div>CNN Drone Canopy (30 trees): <span style="float:right;" id="cCnn">+11.5 bu/ac</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 7: CNN + XGBOOST TEAMWORK -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="x7">
+      <div class="sec-head">
+        <span class="pill pill-gold">Architecture</span>
+        <div>
+          <h2 class="sec-title">How CNN and XGBoost Work Together in Our Project</h2>
+          <div class="sec-sub">The two models combine forces inside our codebase to make the ultimate yield prediction</div>
+        </div>
+      </div>
+
+      <div style="background:#051426;border:1px solid var(--border);border-radius:8px;padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;text-align:center;">
+          <!-- Model 1 -->
+          <div style="background:#0c2542;border:1px solid var(--emerald);border-radius:8px;padding:14px;min-width:220px;flex:1;">
+            <div style="font-size:.78rem;font-weight:800;color:var(--emerald);text-transform:uppercase;">Model 1: CNN (Vision)</div>
+            <div style="font-size:1.6rem;margin:4px 0;">🛸 🌽</div>
+            <div style="font-size:.82rem;color:var(--white);">Drone Canopy Image</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:6px;">
+              Processes 224×224 pixels through 16 Conv blocks $\rightarrow$ extracts canopy density & flowering health
+            </div>
+          </div>
+
+          <div style="font-size:1.8rem;color:var(--gold);">➜</div>
+
+          <!-- Feature Bridge -->
+          <div style="background:#1b2512;border:1px solid var(--gold);border-radius:8px;padding:14px;min-width:180px;">
+            <div style="font-size:.78rem;font-weight:800;color:var(--gold);text-transform:uppercase;">Extracted Features</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;color:#fef08a;margin:6px 0;">Canopy Score: 0.82</div>
+            <div style="font-size:.72rem;color:var(--muted);">Sent into the tabular dataset!</div>
+          </div>
+
+          <div style="font-size:1.8rem;color:var(--gold);">➜</div>
+
+          <!-- Model 2 -->
+          <div style="background:#0c2542;border:1px solid var(--blue);border-radius:8px;padding:14px;min-width:220px;flex:1;">
+            <div style="font-size:.78rem;font-weight:800;color:var(--blue);text-transform:uppercase;">Model 2: XGBoost (Tabular)</div>
+            <div style="font-size:1.6rem;margin:4px 0;">🌦️ 📊 🌳</div>
+            <div style="font-size:.82rem;color:var(--white);">Weather + Soil + CNN Feature</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:6px;">
+              Builds 150 boosted trees correcting residuals $\rightarrow$ <strong>Final Harvest: 176.4 bu/ac</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    <div style="background:linear-gradient(135deg,#0a274a,#134273);border:1px solid var(--blue);border-radius:var(--r);padding:24px 28px;margin-top:16px;text-align:center;">
+      <h3 style="font-size:1.5rem;margin-bottom:8px;">⚡ XGBoost in 60 Seconds</h3>
+      <p style="color:#e0f2fe;font-size:.95rem;max-width:820px;margin:0 auto 14px;">
+        1. <strong>Trees are Flowcharts:</strong> A decision tree simply splits data with yes/no questions (e.g. <em>Is Rain &gt; 3.0"?</em>).<br><br>
+        2. <strong>Boosting Trains on Mistakes:</strong> Tree 1 makes a baseline guess. Tree 2 is trained to predict the <em>residual error</em> of Tree 1. Tree 3 corrects Tree 2, and so on.<br><br>
+        3. <strong>Baby Steps (Learning Rate):</strong> Instead of jumping full speed into every tree's suggestion, we only add 10% ($\eta = 0.10$). This prevents wild overfitting.<br><br>
+        4. <strong>Extreme Power:</strong> Second-order gradients (curvature), automatic pruning, and handling missing sensors make it the most powerful tabular prediction algorithm on Earth!
+      </p>
+      <button class="btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Back to Top</button>
+    </div>
+
+  </div>
+
+  <script>
+    // --- SECTION 1: Single Tree ---
+    function runSingleTree(){
+      const rain = parseFloat(document.getElementById('tRain').value);
+      const temp = parseFloat(document.getElementById('tTemp').value);
+
+      document.getElementById('tRainVal').textContent = rain.toFixed(1) + " inches";
+      document.getElementById('tTempVal').textContent = temp + " °F";
+
+      const lf0 = document.getElementById('lf0');
+      const lf1 = document.getElementById('lf1');
+      const lf2 = document.getElementById('lf2');
+      const nd1 = document.getElementById('nd1');
+
+      lf0.className = 'tree-leaf';
+      lf1.className = 'tree-leaf';
+      lf2.className = 'tree-leaf';
+      nd1.className = 'tree-node';
+
+      const txt = document.getElementById('treeResultText');
+
+      if(rain <= 3.0){
+        lf0.className = 'tree-leaf winner';
+        txt.innerHTML = `Decision Path: Rain ${rain.toFixed(1)}" (≤ 3.0") ➜ <strong style="color:var(--coral);">Predicted: 115 bu/ac (Drought)</strong>`;
+      } else {
+        nd1.className = 'tree-node active';
+        if(temp > 92){
+          lf1.className = 'tree-leaf winner';
+          txt.innerHTML = `Decision Path: Rain ${rain.toFixed(1)}" (&gt; 3.0") ➜ Temp ${temp}°F (&gt; 92°F) ➜ <strong style="color:var(--gold);">Predicted: 152 bu/ac (Heat Stressed)</strong>`;
+        } else {
+          lf2.className = 'tree-leaf winner';
+          txt.innerHTML = `Decision Path: Rain ${rain.toFixed(1)}" (&gt; 3.0") ➜ Temp ${temp}°F (≤ 92°F) ➜ <strong style="color:var(--emerald);">Predicted: 188 bu/ac (Ideal Season)</strong>`;
+        }
+      }
+    }
+
+    // --- SECTION 3: Live Boosting Math ---
+    function simBoosting(trueVal){
+      trueVal = parseFloat(trueVal);
+      document.getElementById('trueYieldVal').textContent = trueVal.toFixed(1) + " bu/ac";
+
+      const base = 150.0;
+      const err0 = trueVal - base;
+      const e0Elem = document.getElementById('err0');
+      e0Elem.textContent = (err0 >= 0 ? "+" : "") + err0.toFixed(1) + " bu/ac";
+      e0Elem.className = 'err-badge ' + (Math.abs(err0) < 5 ? 'err-good' : err0 > 0 ? 'err-pos' : 'err-neg');
+
+      // Tree 1 corrects 55% of the error
+      const t1 = err0 * 0.55;
+      document.getElementById('t1Adj').textContent = (t1 >= 0 ? "+" : "") + t1.toFixed(1);
+      const p1 = base + t1;
+      document.getElementById('p1Val').textContent = p1.toFixed(1);
+      const err1 = trueVal - p1;
+      const e1Elem = document.getElementById('err1');
+      e1Elem.textContent = (err1 >= 0 ? "+" : "") + err1.toFixed(1) + " bu/ac";
+      e1Elem.className = 'err-badge ' + (Math.abs(err1) < 5 ? 'err-good' : err1 > 0 ? 'err-pos' : 'err-neg');
+
+      // Tree 2 corrects 60% of remaining error
+      const t2 = err1 * 0.60;
+      document.getElementById('t2Adj').textContent = (t2 >= 0 ? "+" : "") + t2.toFixed(1);
+      const p2 = p1 + t2;
+      document.getElementById('p2Val').textContent = p2.toFixed(1);
+      const err2 = trueVal - p2;
+      const e2Elem = document.getElementById('err2');
+      e2Elem.textContent = (err2 >= 0 ? "+" : "") + err2.toFixed(1) + " bu/ac";
+      e2Elem.className = 'err-badge ' + (Math.abs(err2) < 5 ? 'err-good' : err2 > 0 ? 'err-pos' : 'err-neg');
+
+      // Tree 3 corrects 75% of remaining error
+      const t3 = err2 * 0.75;
+      document.getElementById('t3Adj').textContent = (t3 >= 0 ? "+" : "") + t3.toFixed(1);
+      const p3 = p2 + t3;
+      document.getElementById('p3Val').textContent = p3.toFixed(1);
+      const err3 = trueVal - p3;
+      const e3Elem = document.getElementById('err3');
+      e3Elem.textContent = (err3 >= 0 ? "+" : "") + err3.toFixed(1) + " bu/ac (Near Perfect!)";
+      e3Elem.className = 'err-badge err-good';
+    }
+
+    // --- SECTION 6: XGBoost Simulator ---
+    function runXGBModel(){
+      const rain = parseFloat(document.getElementById('sRain').value);
+      const gdd = parseFloat(document.getElementById('sGdd').value);
+      const heat = parseFloat(document.getElementById('sHeat').value);
+      const soil = parseFloat(document.getElementById('sSoil').value);
+      const cnn = parseFloat(document.getElementById('sCnn').value);
+
+      document.getElementById('sRainTxt').textContent = rain.toFixed(1) + " in";
+      document.getElementById('sGddTxt').textContent = gdd + " °F-days";
+      document.getElementById('sHeatTxt').textContent = heat + " days";
+      document.getElementById('sSoilTxt').textContent = soil + " %";
+      document.getElementById('sCnnTxt').textContent = cnn.toFixed(2);
+
+      // Ensemble tree calculations
+      // Rain curve: optimum around 20-22 inches, drops below 14 or above 28
+      let cR = 0;
+      if(rain < 12) cR = -28 + (rain - 6) * 2.2;
+      else if(rain <= 22) cR = -15 + (rain - 12) * 3.0;
+      else cR = 15 - (rain - 22) * 2.0;
+
+      // GDD curve: ideal 2600-2800
+      let cG = (gdd - 2200) * 0.012;
+
+      // Heat days penalty: each heat day costs ~1.2 bu/ac
+      let cH = -heat * 1.35;
+
+      // Soil: optimum clay 22-28%
+      let cS = (soil - 15) * 0.55;
+
+      // CNN Canopy Greenness: high greenness adds up to +18 bu/ac
+      let cC = (cnn - 0.4) * 26.0;
+
+      const base = 145.0;
+      const total = base + cR + cG + cH + cS + cC;
+
+      document.getElementById('xgbFinalYield').textContent = total.toFixed(1);
+
+      document.getElementById('cRain').textContent = (cR >= 0 ? "+" : "") + cR.toFixed(1) + " bu/ac";
+      document.getElementById('cRain').style.color = cR >= 0 ? '#6ee7b7' : '#fca5a5';
+
+      document.getElementById('cGdd').textContent = (cG >= 0 ? "+" : "") + cG.toFixed(1) + " bu/ac";
+      document.getElementById('cGdd').style.color = cG >= 0 ? '#6ee7b7' : '#fca5a5';
+
+      document.getElementById('cHeat').textContent = (cH >= 0 ? "+" : "") + cH.toFixed(1) + " bu/ac";
+      document.getElementById('cHeat').style.color = '#fca5a5';
+
+      document.getElementById('cSoil').textContent = (cS >= 0 ? "+" : "") + cS.toFixed(1) + " bu/ac";
+      document.getElementById('cSoil').style.color = cS >= 0 ? '#6ee7b7' : '#fca5a5';
+
+      document.getElementById('cCnn').textContent = (cC >= 0 ? "+" : "") + cC.toFixed(1) + " bu/ac";
+      document.getElementById('cCnn').style.color = cC >= 0 ? '#6ee7b7' : '#fca5a5';
+
+      const b = document.getElementById('xgbStatusBadge');
+      if(total >= 180){
+        b.textContent = '🌽 Bumper Crop!';
+        b.style.background = 'rgba(16,185,129,.2)';
+        b.style.color = '#34d399';
+        b.style.borderColor = '#10b981';
+      } else if(total >= 150){
+        b.textContent = '🌾 Normal / Average Harvest';
+        b.style.background = 'rgba(245,158,11,.2)';
+        b.style.color = '#facc15';
+        b.style.borderColor = '#f59e0b';
+      } else {
+        b.textContent = '🚨 Yield Deficit Alert';
+        b.style.background = 'rgba(244,63,94,.2)';
+        b.style.color = '#fb7185';
+        b.style.borderColor = '#f43f5e';
+      }
+    }
+
+    // --- Navigation ---
+    function goTo(id){
+      const el = document.getElementById(id);
+      if(el) window.scrollTo({top: el.offsetTop - 60, behavior: 'smooth'});
+    }
+
+    const secs = ['x0','x1','x2','x3','x4','x5','x6','x7'];
+    window.addEventListener('scroll', ()=>{
+      const tabs = document.querySelectorAll('.navbtn');
+      let ci = 0;
+      secs.forEach((s, i)=>{
+        const e = document.getElementById(s);
+        if(e && e.getBoundingClientRect().top <= 100) ci = i;
+      });
+      tabs.forEach((t, i) => t.classList.toggle('on', i === ci));
+    });
+
+    // --- Fade in observer ---
+    const obs = new IntersectionObserver(es => es.forEach(e => {
+      if(e.isIntersecting) e.target.classList.add('visible');
+    }), {threshold: 0.15});
+    document.querySelectorAll('.fade-in').forEach(e => obs.observe(e));
+
+    // --- Init ---
+    window.onload = function(){
+      runSingleTree();
+      simBoosting(185);
+      runXGBModel();
+    };
+  </script>
+</body>
+</html>

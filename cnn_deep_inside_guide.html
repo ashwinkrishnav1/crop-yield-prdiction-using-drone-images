@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaizeSight • Deep Inside the CNN: Layer-by-Layer Journey (Beginner Guide)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #04100b;
+      --card: #0b1f17;
+      --card2: #102e23;
+      --border: #1a4a39;
+      --border-hi: #27684f;
+      --emerald: #10b981;
+      --emerald-g: rgba(16,185,129,0.22);
+      --gold: #f59e0b;
+      --gold-g: rgba(245,158,11,0.22);
+      --cyan: #06b6d4;
+      --coral: #f43f5e;
+      --blue: #3b82f6;
+      --purple: #a855f7;
+      --white: #f8fafc;
+      --muted: #94a3b8;
+      --dim: #64748b;
+      --r: 12px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--white);line-height:1.65;padding-bottom:80px;}
+
+    /* STICKY NAV */
+    .topbar{position:sticky;top:0;z-index:100;background:rgba(4,16,11,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;overflow-x:auto;}
+    .logo{font-weight:800;font-size:1rem;white-space:nowrap;color:var(--emerald);}
+    .navbtn{background:none;border:1px solid transparent;color:var(--muted);padding:5px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;}
+    .navbtn:hover{background:var(--card);color:#fff;}
+    .navbtn.on{background:var(--card);border-color:var(--emerald);color:#fff;box-shadow:0 0 8px var(--emerald-g);}
+
+    .wrap{max-width:1100px;margin:0 auto;padding:0 18px;}
+
+    /* HERO */
+    .hero{text-align:center;padding:44px 16px 32px;}
+    .badge{display:inline-block;padding:3px 12px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid var(--emerald);color:var(--emerald);font-size:0.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+    .hero h1{font-size:2.4rem;font-weight:800;letter-spacing:-.6px;line-height:1.15;margin-bottom:10px;background:linear-gradient(135deg,#fff 35%,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .hero p{color:var(--muted);font-size:1.05rem;max-width:750px;margin:0 auto;}
+
+    /* SECTION */
+    .sec{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:26px;margin-bottom:32px;box-shadow:0 12px 35px rgba(0,0,0,.35);transition:border-color .3s;}
+    .sec:hover{border-color:var(--border-hi);}
+    .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+    .pill{background:var(--emerald);color:#04140c;font-weight:800;font-size:.72rem;padding:3px 10px;border-radius:999px;text-transform:uppercase;}
+    .pill-gold{background:var(--gold);}
+    .pill-cyan{background:var(--cyan);}
+    .pill-coral{background:var(--coral);}
+    .pill-blue{background:var(--blue);}
+    .pill-purple{background:var(--purple);}
+    .sec-title{font-size:1.35rem;font-weight:700;letter-spacing:-.3px;}
+    .sec-sub{color:var(--muted);font-size:.88rem;}
+
+    /* CALLOUT BOX */
+    .callout{background:#081a13;border-left:4px solid var(--gold);padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:18px;font-size:.92rem;}
+    .callout strong{color:var(--gold);}
+    .callout-green{border-left-color:var(--emerald);}
+    .callout-green strong{color:var(--emerald);}
+    .callout-blue{border-left-color:var(--blue);}
+    .callout-blue strong{color:var(--blue);}
+
+    /* FLOW ARROW */
+    .flow-arrow{text-align:center;font-size:1.6rem;color:var(--gold);margin:14px 0;letter-spacing:4px;}
+
+    /* GRIDS */
+    .flex-center{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:14px 0;}
+    .mini-grid{display:inline-grid;gap:2px;padding:6px;background:#04100b;border-radius:6px;border:1px solid var(--border);}
+    .mini-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;border-radius:3px;color:#fff;width:38px;height:38px;}
+    .c-leaf{background:rgb(18,130,48);}
+    .c-edge{background:rgb(100,110,30);}
+    .c-soil{background:rgb(70,40,15);}
+    .c-pos{background:rgba(52,211,153,.18);color:#34d399;border:1px solid #1a5e42;}
+    .c-zero{background:#0a1812;color:#64748b;border:1px solid #1a3828;}
+    .c-neg{background:rgba(248,113,113,.14);color:#f87171;border:1px solid #5a2020;}
+    .c-hot{background:#10b981;color:#04140c;}
+    .c-warm{background:#065f46;color:#a7f3d0;}
+    .c-cold{background:#1e293b;color:#94a3b8;}
+    .c-dead{background:#450a0a;color:#fca5a5;}
+
+    /* INTERACTIVE BUTTON ROW */
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;}
+    .btn{background:var(--emerald);color:#04140c;border:none;padding:7px 14px;border-radius:6px;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;}
+    .btn:hover{background:#34d399;transform:translateY(-1px);box-shadow:0 0 12px var(--emerald-g);}
+    .btn-gold{background:var(--gold);}
+    .btn-gold:hover{background:#fbbf24;}
+    .btn-blue{background:var(--blue);}
+    .btn-blue:hover{background:#60a5fa;}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--white);}
+    .btn-outline:hover{border-color:var(--emerald);background:rgba(255,255,255,.04);}
+
+    /* RESULT BOX */
+    .result-box{background:linear-gradient(135deg,#092419,#154531);border:1px solid var(--emerald);border-radius:8px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;margin:12px 0;flex-wrap:wrap;gap:10px;}
+    .result-num{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:800;color:#34d399;text-shadow:0 0 10px rgba(52,211,153,.4);}
+
+    /* LAYER CARD STACK */
+    .layer-stack{display:flex;flex-direction:column;gap:10px;margin:14px 0;}
+    .layer-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;transition:all .25s;cursor:pointer;}
+    .layer-card:hover{border-color:var(--emerald);transform:translateX(4px);}
+    .layer-card.expanded{border-color:var(--gold);background:#143328;}
+    .layer-dims{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--cyan);}
+    .layer-detail{display:none;margin-top:10px;padding:10px 14px;background:#081a13;border-radius:6px;font-size:.85rem;color:var(--muted);line-height:1.7;}
+    .layer-detail.show{display:block;}
+
+    /* SLIDER */
+    .range-input{width:100%;height:8px;border-radius:4px;background:#184333;outline:none;-webkit-appearance:none;margin:10px 0;}
+    .range-input::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--emerald);cursor:pointer;box-shadow:0 0 8px var(--emerald-g);}
+
+    /* MATH TABLE */
+    .math-tbl{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;background:#04100b;border-radius:8px;overflow:hidden;border:1px solid var(--border);margin:10px 0;}
+    .math-tbl th,.math-tbl td{padding:7px 10px;text-align:center;border-bottom:1px solid #143528;}
+    .math-tbl th{background:#0f2b20;color:var(--muted);font-size:.7rem;text-transform:uppercase;}
+
+    /* YIELD CARD */
+    .yield-card{background:linear-gradient(135deg,#09281c,#164934);border:2px solid var(--gold);border-radius:var(--r);padding:22px;text-align:center;box-shadow:0 0 30px var(--gold-g);}
+    .yield-big{font-family:'JetBrains Mono',monospace;font-size:2.8rem;font-weight:800;color:var(--gold);margin:8px 0;letter-spacing:-1px;}
+
+    /* 2-COL LAYOUT */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+    @media(max-width:850px){.two-col{grid-template-columns:1fr;}}
+
+    /* ANIMATION */
+    .pulse{animation:pulse-glow 2s ease-in-out infinite;}
+    @keyframes pulse-glow{0%,100%{box-shadow:0 0 5px var(--emerald-g);}50%{box-shadow:0 0 20px var(--emerald-g);}}
+
+    .fade-in{opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s;}
+    .fade-in.visible{opacity:1;transform:translateY(0);}
+
+    /* STEP CONNECTOR */
+    .connector{text-align:center;padding:8px 0;position:relative;}
+    .connector::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--emerald),var(--gold));border-radius:2px;transform:translateX(-50%);}
+    .connector-label{position:relative;display:inline-block;background:var(--bg);padding:4px 14px;border-radius:999px;border:1px solid var(--border);font-size:.78rem;font-weight:700;color:var(--muted);}
+  </style>
+</head>
+<body>
+
+  <!-- STICKY NAV -->
+  <div class="topbar">
+    <span class="logo">🌽 CNN Deep Dive</span>
+    <button class="navbtn on" onclick="goTo('s0')">🖼️ Image → Numbers</button>
+    <button class="navbtn" onclick="goTo('s1')">🔍 Layer 1 Filters</button>
+    <button class="navbtn" onclick="goTo('s1b')">⚡ Activation</button>
+    <button class="navbtn" onclick="goTo('s2')">📐 Shrinking</button>
+    <button class="navbtn" onclick="goTo('s3')">🧠 Layer 2+</button>
+    <button class="navbtn" onclick="goTo('s4')">🏔️ Full Pyramid</button>
+    <button class="navbtn" onclick="goTo('s5')">📊 1,280 Clues</button>
+    <button class="navbtn" onclick="goTo('s6')">🌾 Final Yield</button>
+  </div>
+
+  <div class="wrap">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="badge">Beginner-Friendly Interactive Guide</div>
+      <h1>Deep Inside the CNN: The Complete Layer-by-Layer Journey</h1>
+      <p>Follow your drone photo as it enters the CNN and travels through every single layer, from raw colored dots all the way to one final harvest number.</p>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 0: IMAGE BECOMES NUMBERS -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s0">
+      <div class="sec-head">
+        <span class="pill">Before CNN</span>
+        <div>
+          <h2 class="sec-title">Your Drone Photo Becomes a Grid of Numbers</h2>
+          <div class="sec-sub">This happens OUTSIDE the CNN, in normal Python code, before anything enters the network</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Think of it like this:</strong> Before you can cook food in an oven, you need to wash and chop the vegetables on the kitchen counter first. Similarly, before the CNN can work on your image, normal Python code must convert it into clean numbers.
+      </div>
+
+      <!-- Interactive: Click pixel to see its RGB -->
+      <div class="two-col">
+        <div>
+          <h4 style="color:var(--emerald);margin-bottom:8px;">What Your Eyes See:</h4>
+          <div style="background:#04100b;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:.82rem;color:var(--muted);margin-bottom:6px;">A piece of corn field from the drone camera (Click any pixel!)</div>
+            <div class="mini-grid" style="grid-template-columns:repeat(8,1fr);" id="imgGrid0"></div>
+          </div>
+          <div style="margin-top:10px;">
+            <div class="btn-row">
+              <button class="btn-outline" onclick="setView0('color')">🎨 Color View</button>
+              <button class="btn-outline" onclick="setView0('raw')">🔢 Raw Numbers (0–255)</button>
+              <button class="btn-outline" onclick="setView0('norm')">📏 Normalized (0.0–1.0)</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h4 style="color:var(--gold);margin-bottom:8px;">What The Computer Sees (Live Inspector):</h4>
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #163f30;font-size:.88rem;">
+              <span>📍 Pixel Position:</span>
+              <strong id="ins0-pos">Row 1, Col 3</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #163f30;font-size:.88rem;">
+              <span>🏷️ What is it?</span>
+              <strong id="ins0-type" style="color:#4ade80;">Green Corn Leaf</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #163f30;font-size:.88rem;">
+              <span>📷 Camera Records (RGB 0–255):</span>
+              <span id="ins0-rgb" style="font-family:'JetBrains Mono',monospace;font-size:.82rem;">R:32 G:198 B:45</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #163f30;font-size:.88rem;">
+              <span>➗ After Dividing by 255:</span>
+              <strong id="ins0-norm" style="color:var(--gold);font-family:'JetBrains Mono',monospace;">[0.13, 0.78, 0.18]</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.88rem;">
+              <span>📐 After Standardization:</span>
+              <strong id="ins0-std" style="color:var(--cyan);font-family:'JetBrains Mono',monospace;">[-0.67, +1.41, -0.52]</strong>
+            </div>
+            <div style="font-size:.78rem;color:var(--dim);margin-top:10px;padding:8px;background:#04100b;border-radius:6px;">
+              <strong>Summary:</strong> The camera gave us numbers like <code>198</code>. We divided by 255 to get <code>0.78</code>. Then we centered it around 0 by subtracting the average and dividing by the spread, giving <code>+1.41</code>. <strong>This final number is what enters the CNN!</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">The cleaned numbers now ENTER the CNN ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 1: LAYER 1 — FILTERS ARE BORN -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s1">
+      <div class="sec-head">
+        <span class="pill pill-gold">Layer 1</span>
+        <div>
+          <h2 class="sec-title">Layer 1: The CNN Creates 32 Pattern-Detecting Filters</h2>
+          <div class="sec-sub">Where do the 3×3 filter numbers come from? They start as RANDOM GUESSES and learn during training!</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Key Concept — Where Do the Filter Numbers Come From?</strong><br>
+        When the CNN is first created (before any training), the 3×3 filters are filled with <strong>completely random numbers</strong> like 0.03, -0.12, 0.45. They have no idea what a corn leaf looks like!<br><br>
+        During <strong>training</strong>, the CNN is shown thousands of corn images WITH known harvest yields. Each time it guesses wrong, the math (called <strong>Backpropagation</strong>) nudges the filter numbers slightly in the right direction. After seeing thousands of images, the random filters have automatically evolved into expert edge detectors, color detectors, and texture detectors!<br><br>
+        <strong>You never program what the filters should look for. The CNN learns it on its own!</strong>
+      </div>
+
+      <h4 style="color:var(--emerald);margin-bottom:10px;">Example: What Layer 1's Filters Look Like After Training</h4>
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px;">The CNN has learned 32 different filters. Here are 3 example filters and what each one has learned to detect:</p>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+        <!-- Filter 1: Horizontal Edge -->
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;min-width:200px;flex:1;">
+          <div style="font-size:.82rem;font-weight:700;color:var(--gold);margin-bottom:8px;">Filter #1: Horizontal Edge Detector</div>
+          <div class="mini-grid" style="grid-template-columns:repeat(3,38px);margin:0 auto;">
+            <div class="mini-cell c-pos">+1</div><div class="mini-cell c-pos">+1</div><div class="mini-cell c-pos">+1</div>
+            <div class="mini-cell c-zero">0</div><div class="mini-cell c-zero">0</div><div class="mini-cell c-zero">0</div>
+            <div class="mini-cell c-neg">-1</div><div class="mini-cell c-neg">-1</div><div class="mini-cell c-neg">-1</div>
+          </div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:6px;">Finds where green leaf ENDS and dark soil STARTS (top-to-bottom transition)</div>
+        </div>
+
+        <!-- Filter 2: Vertical Edge -->
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;min-width:200px;flex:1;">
+          <div style="font-size:.82rem;font-weight:700;color:var(--cyan);margin-bottom:8px;">Filter #2: Vertical Crop Row Detector</div>
+          <div class="mini-grid" style="grid-template-columns:repeat(3,38px);margin:0 auto;">
+            <div class="mini-cell c-pos">+1</div><div class="mini-cell c-zero">0</div><div class="mini-cell c-neg">-1</div>
+            <div class="mini-cell c-pos">+1</div><div class="mini-cell c-zero">0</div><div class="mini-cell c-neg">-1</div>
+            <div class="mini-cell c-pos">+1</div><div class="mini-cell c-zero">0</div><div class="mini-cell c-neg">-1</div>
+          </div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:6px;">Finds left-to-right boundaries between planted rows</div>
+        </div>
+
+        <!-- Filter 3: Greenness -->
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;min-width:200px;flex:1;">
+          <div style="font-size:.82rem;font-weight:700;color:#4ade80;margin-bottom:8px;">Filter #3: High Greenness Detector</div>
+          <div class="mini-grid" style="grid-template-columns:repeat(3,38px);margin:0 auto;">
+            <div class="mini-cell c-neg">-0.5</div><div class="mini-cell c-pos">+1</div><div class="mini-cell c-neg">-0.5</div>
+            <div class="mini-cell c-pos">+1</div><div class="mini-cell c-pos">+2</div><div class="mini-cell c-pos">+1</div>
+            <div class="mini-cell c-neg">-0.5</div><div class="mini-cell c-pos">+1</div><div class="mini-cell c-neg">-0.5</div>
+          </div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:6px;">Lights up strongly where the center pixel is bright green leaf</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">▼ ▼ ▼</div>
+
+      <h4 style="color:var(--emerald);margin-bottom:10px;">Now: Each Filter Slides Across the ENTIRE 224×224 Image</h4>
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px;">Click the buttons to watch Filter #1 slide to different positions and calculate the score at each spot:</p>
+
+      <div class="two-col">
+        <div>
+          <div style="background:#04100b;border:1px solid var(--border);border-radius:8px;padding:12px;">
+            <div style="font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:6px;">Image Patch Under the Filter (3×3 window)</div>
+            <div class="flex-center">
+              <div>
+                <div class="mini-grid" style="grid-template-columns:repeat(3,42px);" id="l1PatchGrid"></div>
+                <div style="font-size:.72rem;color:var(--dim);text-align:center;margin-top:4px;">Image Values</div>
+              </div>
+              <span style="font-size:1.2rem;color:var(--gold);font-weight:800;">×</span>
+              <div>
+                <div class="mini-grid" style="grid-template-columns:repeat(3,42px);" id="l1FilterGrid"></div>
+                <div style="font-size:.72rem;color:var(--dim);text-align:center;margin-top:4px;">Filter Weights</div>
+              </div>
+              <span style="font-size:1.2rem;color:var(--emerald);font-weight:800;">=</span>
+              <div style="width:56px;height:56px;border-radius:8px;background:#081e16;border:2px solid var(--emerald);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:800;" id="l1Result">+2.28</div>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:10px;">
+            <button class="btn" onclick="setL1Patch('edge')">🌿 Leaf → Soil Edge</button>
+            <button class="btn btn-blue" onclick="setL1Patch('leaf')">🍃 Solid Green Leaf</button>
+            <button class="btn btn-gold" onclick="setL1Patch('soil')">🟤 Bare Soil</button>
+          </div>
+        </div>
+        <div>
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <h4 style="color:var(--gold);font-size:.95rem;margin-bottom:8px;">Live Step-by-Step Math:</h4>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);line-height:1.8;" id="l1Math">
+              Top Row: (0.90×+1) + (0.85×+1) + (0.92×+1) = +2.67<br>
+              Mid Row: (0.75× 0) + (0.70× 0) + (0.72× 0) = 0.00<br>
+              Bot Row: (0.12×-1) + (0.14×-1) + (0.13×-1) = −0.39
+            </div>
+            <div class="result-box" style="margin-top:10px;">
+              <span style="font-weight:700;">Total Score at This Position:</span>
+              <span class="result-num" id="l1Total">+2.28</span>
+            </div>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:6px;" id="l1Explain">
+              💡 The top row was bright green (+2.67) and bottom was dark soil (−0.39). The high positive sum tells the CNN: <em>"I found a clear leaf-to-soil boundary here!"</em>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-green" style="margin-top:16px;">
+        <strong>After sliding Filter #1 across ALL positions of the 224×224 image:</strong> The CNN writes down ALL those scores into a new 222×222 grid called <strong>Feature Map #1</strong>. It's like a heat map showing where horizontal edges are located!<br><br>
+        The CNN does the <strong>same thing with all 32 filters</strong>, creating <strong>32 different Feature Maps</strong>. Each one shows a different type of clue (edges, rows, greenness, corners, etc.).<br><br>
+        <strong>Result after Layer 1 Convolution: 32 sheets of 222×222 numbers</strong>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">32 Feature Maps now pass through the Activation Gate ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 1B: ACTIVATION FUNCTION -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s1b">
+      <div class="sec-head">
+        <span class="pill pill-coral">Activation</span>
+        <div>
+          <h2 class="sec-title">The Activation Gate: Killing Negative Noise, Keeping Real Signals</h2>
+          <div class="sec-sub">Every number on every Feature Map passes through this rule IMMEDIATELY after convolution</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Why do we need this?</strong><br>
+        When the filter slides over flat dirt or confusing shadows, the math might give a <strong>negative number</strong> (e.g., −1.8). But a negative leaf edge makes no sense! The activation function simply says: <strong>"If the number is negative → turn it into 0. If it's positive → keep it."</strong><br><br>
+        This is called <strong>ReLU</strong> (Rectified Linear Unit): <code>output = max(0, input)</code><br>
+        EfficientNet-B0 uses a smoother version called <strong>Swish</strong>: <code>output = x × sigmoid(x)</code>
+      </div>
+
+      <div class="two-col">
+        <div style="background:#071913;border:1px solid var(--border);border-radius:8px;padding:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;">Drag the slider to test any input number:</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:1.15rem;font-weight:800;color:var(--gold);" id="actVal">+2.20</span>
+          </div>
+          <input type="range" class="range-input" id="actSlider" min="-5" max="5" step="0.1" value="2.2" oninput="updAct(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--dim);">
+            <span>−5 (Strong Noise)</span>
+            <span>0 (Neutral)</span>
+            <span>+5 (Strong Plant Signal)</span>
+          </div>
+
+          <div style="margin-top:16px;display:flex;gap:10px;">
+            <div style="flex:1;background:#04100b;padding:10px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+              <div style="font-size:.72rem;color:var(--dim);margin-bottom:4px;">INPUT (Raw)</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:800;" id="actIn">+2.20</div>
+            </div>
+            <div style="font-size:1.5rem;color:var(--gold);align-self:center;">→</div>
+            <div style="flex:1;background:#04100b;padding:10px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+              <div style="font-size:.72rem;color:var(--dim);margin-bottom:4px;">OUTPUT (After Gate)</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:800;" id="actOut">+2.20</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <h4 style="color:var(--emerald);margin-bottom:10px;">What the gate decided:</h4>
+          <div style="font-size:.92rem;" id="actExpl">
+            ✅ <strong>+2.20 is positive!</strong> This is a real leaf edge signal. The gate lets it pass through untouched. It will be sent to the next layer!
+          </div>
+          <div style="margin-top:14px;padding:10px;background:#04100b;border-radius:6px;border:1px solid var(--border);">
+            <div style="font-size:.82rem;font-weight:700;color:var(--gold);margin-bottom:4px;">Real Example From Our 32 Feature Maps:</div>
+            <div style="font-size:.82rem;color:var(--muted);">
+              • Feature Map #1 (Leaf Edges): Score at position (45,78) was <strong style="color:#34d399;">+2.28 → Kept as +2.28</strong><br>
+              • Feature Map #1 (Leaf Edges): Score at position (180,150) was <strong style="color:#f87171;">−0.85 → Turned into 0.00</strong><br>
+              • Feature Map #3 (Greenness): Score at position (12,30) was <strong style="color:#34d399;">+3.45 → Kept as +3.45</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-green" style="margin-top:16px;">
+        <strong>After Activation:</strong> We still have <strong>32 Feature Maps</strong>, each 222×222. But now all negative noise has been erased to 0. Only meaningful positive signals remain. These cleaned-up maps are now ready to enter <strong>the next layer!</strong>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">32 cleaned Feature Maps enter Layer 2 ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 2: SHRINKING (STRIDE/POOLING) -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s2">
+      <div class="sec-head">
+        <span class="pill pill-blue">Shrinking</span>
+        <div>
+          <h2 class="sec-title">Downsampling: Cutting the Size in Half to Speed Things Up</h2>
+          <div class="sec-sub">Before Layer 2 starts, the CNN shrinks each 222×222 map down to 112×112</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Why shrink?</strong> A 222×222 grid has ~49,000 numbers per feature map. With 32 maps, that's 1.6 MILLION numbers! The computer would be extremely slow processing all of them. <strong>Max Pooling</strong> looks at every 2×2 block (4 numbers) and keeps only the biggest one (the strongest signal). This cuts the size in half while preserving the important clues!
+      </div>
+
+      <div class="flex-center">
+        <div style="text-align:center;">
+          <div style="font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:6px;">Before: 4×4 Feature Map (16 numbers)</div>
+          <div class="mini-grid" style="grid-template-columns:repeat(4,42px);">
+            <div class="mini-cell" style="background:rgba(59,130,246,.25);border:1px solid #3b82f6;">1.2</div>
+            <div class="mini-cell" style="background:rgba(59,130,246,.25);border:1px solid #3b82f6;font-weight:900;color:#60a5fa;">2.4</div>
+            <div class="mini-cell" style="background:rgba(16,185,129,.25);border:1px solid #10b981;">0.1</div>
+            <div class="mini-cell" style="background:rgba(16,185,129,.25);border:1px solid #10b981;font-weight:900;color:#34d399;">0.8</div>
+            <div class="mini-cell" style="background:rgba(59,130,246,.25);border:1px solid #3b82f6;">0.5</div>
+            <div class="mini-cell" style="background:rgba(59,130,246,.25);border:1px solid #3b82f6;">1.8</div>
+            <div class="mini-cell" style="background:rgba(16,185,129,.25);border:1px solid #10b981;">0.4</div>
+            <div class="mini-cell" style="background:rgba(16,185,129,.25);border:1px solid #10b981;">1.9</div>
+            <div class="mini-cell" style="background:rgba(245,158,11,.25);border:1px solid #f59e0b;">0.2</div>
+            <div class="mini-cell" style="background:rgba(245,158,11,.25);border:1px solid #f59e0b;font-weight:900;color:#fbbf24;">0.3</div>
+            <div class="mini-cell" style="background:rgba(236,72,153,.25);border:1px solid #ec4899;font-weight:900;color:#f472b6;">3.1</div>
+            <div class="mini-cell" style="background:rgba(236,72,153,.25);border:1px solid #ec4899;">2.8</div>
+            <div class="mini-cell" style="background:rgba(245,158,11,.25);border:1px solid #f59e0b;">0.0</div>
+            <div class="mini-cell" style="background:rgba(245,158,11,.25);border:1px solid #f59e0b;">0.1</div>
+            <div class="mini-cell" style="background:rgba(236,72,153,.25);border:1px solid #ec4899;">2.5</div>
+            <div class="mini-cell" style="background:rgba(236,72,153,.25);border:1px solid #ec4899;">2.9</div>
+          </div>
+        </div>
+        <div style="font-size:2rem;color:var(--gold);">➜</div>
+        <div style="text-align:center;">
+          <div style="font-size:.82rem;font-weight:600;color:var(--gold);margin-bottom:6px;">After Max Pooling: 2×2 (only 4 numbers!)</div>
+          <div class="mini-grid" style="grid-template-columns:repeat(2,56px);gap:4px;">
+            <div class="mini-cell" style="width:56px;height:56px;font-size:.95rem;background:rgba(59,130,246,.3);border:2px solid #3b82f6;color:#93c5fd;">2.4</div>
+            <div class="mini-cell" style="width:56px;height:56px;font-size:.95rem;background:rgba(16,185,129,.3);border:2px solid #10b981;color:#6ee7b7;">1.9</div>
+            <div class="mini-cell" style="width:56px;height:56px;font-size:.95rem;background:rgba(245,158,11,.3);border:2px solid #f59e0b;color:#fcd34d;">0.3</div>
+            <div class="mini-cell" style="width:56px;height:56px;font-size:.95rem;background:rgba(236,72,153,.3);border:2px solid #ec4899;color:#f9a8d4;">3.1</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;font-size:.85rem;color:var(--muted);margin-top:10px;">
+        75% of the numbers were thrown away, but the 4 strongest signals (2.4, 1.9, 0.3, 3.1) were preserved!
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">32 shrunk maps (112×112 each) enter Layer 2 ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 3: LAYER 2+ — COMBINING CLUES -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s3">
+      <div class="sec-head">
+        <span class="pill pill-cyan">Layer 2+</span>
+        <div>
+          <h2 class="sec-title">Layer 2 and Beyond: Combining Simple Clues into Complex Biological Features</h2>
+          <div class="sec-sub">This is where the CNN becomes truly smart — it combines edges into leaves, and leaves into tassels!</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>The Magic of Deep Layers:</strong><br>
+        Layer 1 looked at raw pixels and found simple lines/edges. But a line is not a corn leaf! In Layer 2, the filters look at <strong>ALL 32 Feature Maps from Layer 1 at the same time</strong>. They combine clues:<br><br>
+        • <em>Horizontal edge (Map #1)</em> + <em>Vertical edge (Map #2)</em> + <em>High greenness (Map #3)</em> → "This is a <strong>corn leaf corner!</strong>"<br>
+        • <em>No edges anywhere (Maps #1–5 are all zero)</em> + <em>Low greenness (Map #3 is zero)</em> → "This is <strong>bare soil</strong>, skip it."<br><br>
+        <strong>Layer 2 creates 64 new Feature Maps</strong> (more sheets of numbers). Each new sheet represents a more complex idea!
+      </div>
+
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:16px;margin:14px 0;">
+        <h4 style="color:var(--gold);margin-bottom:10px;">How Layer 2 Filters Are Different From Layer 1:</h4>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:250px;background:#04100b;padding:12px;border-radius:6px;border:1px solid var(--border);">
+            <div style="font-size:.85rem;font-weight:700;color:var(--emerald);margin-bottom:6px;">Layer 1 Filter (Simple)</div>
+            <div style="font-size:.82rem;color:var(--muted);">
+              • Looks at: <strong>3 input channels</strong> (Red, Green, Blue)<br>
+              • Size: 3×3×3 = <strong>27 weights</strong><br>
+              • Finds: Basic edges, lines, color blobs<br>
+              • Output: 32 feature maps
+            </div>
+          </div>
+          <div style="flex:1;min-width:250px;background:#04100b;padding:12px;border-radius:6px;border:1px solid var(--border);">
+            <div style="font-size:.85rem;font-weight:700;color:var(--gold);margin-bottom:6px;">Layer 2 Filter (Smarter)</div>
+            <div style="font-size:.82rem;color:var(--muted);">
+              • Looks at: <strong>32 input channels</strong> (all of Layer 1's maps!)<br>
+              • Size: 3×3×32 = <strong>288 weights</strong><br>
+              • Finds: Leaf shapes, canopy patches, row corners<br>
+              • Output: 64 feature maps
+            </div>
+          </div>
+        </div>
+        <div style="font-size:.85rem;color:var(--muted);margin-top:12px;padding:10px;background:#081a13;border-radius:6px;">
+          <strong>Key Insight:</strong> Each deeper layer reads ALL the maps from the previous layer. So Layer 3 reads 64 maps, Layer 4 reads 128 maps. The filters get bigger in depth (more channels to read) even though they stay 3×3 in spatial size. This is how the CNN builds increasingly complex understanding!
+        </div>
+      </div>
+
+      <h4 style="color:var(--emerald);margin:14px 0 8px;">What Each Layer Learns to See (Click to Expand):</h4>
+
+      <div class="layer-stack">
+        <div class="layer-card" onclick="toggleLayer(this)">
+          <div><strong style="color:#60a5fa;">Layers 1–2:</strong> <span style="color:var(--muted);">Lines, Edges, and Simple Color Contrasts</span></div>
+          <div class="layer-dims">112 × 112 × 32</div>
+        </div>
+        <div class="layer-detail" id="ld1">
+          🔹 <strong>What it sees:</strong> Straight lines (horizontal crop rows, vertical leaf blades), edges between green and brown, color intensity differences.<br>
+          🔹 <strong>Real farm example:</strong> "There's a sharp line at pixel row 45 where bright green suddenly changes to dark brown = crop row edge."<br>
+          🔹 <strong>Agricultural value:</strong> Tells the CNN where the plants are versus where the soil is.
+        </div>
+
+        <div class="layer-card" onclick="toggleLayer(this)">
+          <div><strong style="color:#34d399;">Layers 3–4:</strong> <span style="color:var(--muted);">Leaf Textures, Canopy Overlap, and Gap Patterns</span></div>
+          <div class="layer-dims">56 × 56 × 64</div>
+        </div>
+        <div class="layer-detail" id="ld2">
+          🔹 <strong>What it sees:</strong> Repeated leaf textures, overlapping leaf canopy areas, inter-row gaps, patches of consistent green vs brown.<br>
+          🔹 <strong>Real farm example:</strong> "This 56×56 region has dense overlapping leaves = thick canopy" vs "This region has gaps between rows = sparse stand."<br>
+          🔹 <strong>Agricultural value:</strong> Measures <strong>canopy closure</strong> — how much of the soil is covered by leaves. More canopy = more photosynthesis = more yield!
+        </div>
+
+        <div class="layer-card" onclick="toggleLayer(this)">
+          <div><strong style="color:var(--gold);">Layers 5–6:</strong> <span style="color:var(--muted);">Flowering Tassels, Ear Shoots, and Drought Symptoms</span></div>
+          <div class="layer-dims">14 × 14 × 192</div>
+        </div>
+        <div class="layer-detail" id="ld3">
+          🔹 <strong>What it sees:</strong> Complete biological structures: yellow tassel clusters at the top of corn plants, curling leaves (drought stress), missing plants (empty spots in a row).<br>
+          🔹 <strong>Real farm example:</strong> "This 14×14 zone shows feathery yellow-white tassel structures = the plant is at flowering stage (R1)" or "Brown curling leaves = the plant is under severe heat stress."<br>
+          🔹 <strong>Agricultural value:</strong> Directly relates to yield! Good tassels = good pollination = full ears of corn. Drought stress = fewer kernels.
+        </div>
+
+        <div class="layer-card" onclick="toggleLayer(this)" style="border-color:var(--emerald);">
+          <div><strong style="color:var(--emerald);">Final Block (Layer 16):</strong> <span style="color:var(--muted);">Complete Agronomic Summary of the Plot</span></div>
+          <div class="layer-dims">7 × 7 × 1,280</div>
+        </div>
+        <div class="layer-detail" id="ld4">
+          🔹 <strong>What it sees:</strong> The entire biological state of the corn plot compressed into 1,280 conceptual dimensions.<br>
+          🔹 <strong>Each of the 1,280 channels</strong> represents a different high-level trait: chlorophyll health, tassel density, plant population, drought severity, weed pressure, canopy uniformity, etc.<br>
+          🔹 <strong>The 7×7 grid</strong> means only 49 spatial positions remain from the original 224×224. Each position covers roughly a 32×32 pixel area of the original image.<br>
+          🔹 <strong>Agricultural value:</strong> This IS the "digital health report" of the crop. It contains everything the CNN learned from the image!
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">The CNN pyramid is now at 7×7×1,280 ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 4: FULL PYRAMID VIEW -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s4">
+      <div class="sec-head">
+        <span class="pill pill-purple">Full Pyramid</span>
+        <div>
+          <h2 class="sec-title">The Complete EfficientNet-B0 Pyramid: All 16 Blocks at a Glance</h2>
+          <div class="sec-sub">Watch the spatial size shrink and channel count grow as data flows through the entire network</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;">
+        <table class="math-tbl">
+          <thead>
+            <tr>
+              <th>Stage</th>
+              <th>Grid Size (Height × Width)</th>
+              <th>Number of Sheets (Channels)</th>
+              <th>Total Numbers</th>
+              <th>What It Understands</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--white);font-weight:700;">📷 Input</td>
+              <td style="color:var(--cyan);">224 × 224</td>
+              <td>3 (RGB)</td>
+              <td>150,528</td>
+              <td style="text-align:left;color:var(--muted);">Raw colored dots from drone camera</td>
+            </tr>
+            <tr>
+              <td style="color:#60a5fa;font-weight:700;">🔍 Layer 1</td>
+              <td style="color:var(--cyan);">112 × 112</td>
+              <td>32</td>
+              <td>401,408</td>
+              <td style="text-align:left;color:var(--muted);">Simple edges, lines, color blobs</td>
+            </tr>
+            <tr>
+              <td style="color:#34d399;font-weight:700;">🧩 Layer 3</td>
+              <td style="color:var(--cyan);">56 × 56</td>
+              <td>64</td>
+              <td>200,704</td>
+              <td style="text-align:left;color:var(--muted);">Leaf shapes, canopy patches</td>
+            </tr>
+            <tr>
+              <td style="color:#fbbf24;font-weight:700;">🌿 Layer 5</td>
+              <td style="color:var(--cyan);">28 × 28</td>
+              <td>128</td>
+              <td>100,352</td>
+              <td style="text-align:left;color:var(--muted);">Row structures, gaps, soil patches</td>
+            </tr>
+            <tr>
+              <td style="color:#f97316;font-weight:700;">🌾 Layer 7</td>
+              <td style="color:var(--cyan);">14 × 14</td>
+              <td>320</td>
+              <td>62,720</td>
+              <td style="text-align:left;color:var(--muted);">Flowering tassels, ear shoots, drought</td>
+            </tr>
+            <tr style="background:#0f2b20;">
+              <td style="color:var(--emerald);font-weight:800;">🏆 Final Output</td>
+              <td style="color:var(--emerald);font-weight:800;">7 × 7</td>
+              <td style="color:var(--emerald);font-weight:800;">1,280</td>
+              <td style="color:var(--emerald);font-weight:800;">62,720</td>
+              <td style="text-align:left;color:var(--emerald);font-weight:700;">Complete health report of the corn plot</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="font-size:.88rem;color:var(--muted);margin-top:12px;text-align:center;">
+        Notice the pattern: <strong style="color:var(--cyan);">Grid Size shrinks</strong> (224→112→56→28→14→7) while <strong style="color:var(--gold);">Channel Count grows</strong> (3→32→64→128→320→1,280). The CNN trades spatial detail for conceptual depth!
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">7×7×1,280 → Global Average Pooling ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 5: GLOBAL AVERAGE POOLING → 1,280 NUMBERS -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s5">
+      <div class="sec-head">
+        <span class="pill">Collapse</span>
+        <div>
+          <h2 class="sec-title">Global Average Pooling: 7×7 Grid → 1 Number Per Channel = 1,280 Clue Numbers</h2>
+          <div class="sec-sub">The CNN no longer cares WHERE inside the patch something is — only HOW MUCH of it exists</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Why average?</strong> We don't care if the flowering tassel is in the top-left or bottom-right corner of the patch. We only care: <em>How strong is the tassel signal overall?</em> By averaging the 49 numbers (7×7) in each sheet, we collapse all spatial info into one single score per trait.
+      </div>
+
+      <div class="flex-center" style="padding:18px;background:#071913;border:1px solid var(--border);border-radius:8px;">
+        <div style="text-align:center;">
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:4px;">Channel #42 (Canopy Density)<br>7×7 grid = 49 numbers</div>
+          <div class="mini-grid" style="grid-template-columns:repeat(7,28px);">
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.4</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.6</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.1</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.8</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.5</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.0</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.3</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.7</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.9</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.2</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.6</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.4</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.8</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.3</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.5</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.7</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.0</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.6</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.9</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.4</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.8</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.1</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.5</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.7</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.3</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.6</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.4</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.8</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.5</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.7</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.4</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.9</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.0</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.6</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.3</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.8</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.5</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.7</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.2</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.9</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.4</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.6</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.0</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.8</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.5</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.7</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.3</div>
+            <div class="mini-cell c-hot" style="width:28px;height:28px;font-size:.55rem;">2.1</div>
+            <div class="mini-cell c-warm" style="width:28px;height:28px;font-size:.55rem;">1.9</div>
+          </div>
+        </div>
+
+        <div style="text-align:center;">
+          <div style="font-size:1.8rem;color:var(--gold);">➜</div>
+          <div style="font-size:.72rem;color:var(--dim);">Average<br>all 49</div>
+        </div>
+
+        <div style="text-align:center;">
+          <div style="font-size:.78rem;color:var(--gold);margin-bottom:4px;">Channel #42 Score:</div>
+          <div style="width:64px;height:64px;border-radius:8px;background:rgba(245,158,11,.2);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:800;color:var(--gold);margin:0 auto;">1.74</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">1 number = "Canopy is dense!"</div>
+        </div>
+
+        <div style="text-align:center;">
+          <div style="font-size:1.5rem;color:var(--cyan);">× 1,280</div>
+          <div style="font-size:.72rem;color:var(--dim);">channels</div>
+        </div>
+
+        <div style="text-align:center;">
+          <div style="font-size:.78rem;color:var(--cyan);margin-bottom:4px;">Final 1D Vector:</div>
+          <div style="padding:8px 14px;border-radius:6px;background:#081e28;border:1px solid var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#38bdf8;">
+            [x₁, x₂, x₃, ... x₁₂₈₀]
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">1,280 numbers = Complete health report!</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector"><span class="connector-label">1,280 numbers enter the Final Regression ⬇</span></div>
+
+    <!-- ============================================================== -->
+    <!-- SECTION 6: FINAL YIELD CALCULATION -->
+    <!-- ============================================================== -->
+    <section class="sec fade-in" id="s6">
+      <div class="sec-head">
+        <span class="pill pill-gold">Final Step</span>
+        <div>
+          <h2 class="sec-title">The Final Equation: 1,280 Numbers × Weights = One Harvest Yield</h2>
+          <div class="sec-sub">The simplest math in the entire CNN: multiply each clue by its importance and add them all up!</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>The simplest step!</strong> Each of the 1,280 clue numbers is multiplied by a learned <strong>weight</strong> that says how important that clue is for predicting yield. Healthy green foliage gets a <strong>positive weight (+)</strong>, meaning it adds yield. Drought stress gets a <strong>negative weight (−)</strong>, meaning it reduces yield. Everything is summed up into one final number!
+      </div>
+
+      <div class="two-col">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <h4 style="color:var(--emerald);">Adjust Field Traits (Drag the Sliders!):</h4>
+          <div style="background:#071913;border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;"><span>🌿 Dense Green Canopy</span><span style="color:#4ade80;font-family:'JetBrains Mono',monospace;font-weight:700;">Weight: +22.5</span></div>
+            <input type="range" class="range-input" id="ys1" min="0" max="1.5" step="0.05" value="1.1" oninput="calcYield()">
+          </div>
+          <div style="background:#071913;border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;"><span>🌾 Flowering Tassels</span><span style="color:#facc15;font-family:'JetBrains Mono',monospace;font-weight:700;">Weight: +18.0</span></div>
+            <input type="range" class="range-input" id="ys2" min="0" max="1.5" step="0.05" value="1.0" oninput="calcYield()">
+          </div>
+          <div style="background:#071913;border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;"><span>🍂 Yellow / Drought Stress</span><span style="color:#fb7185;font-family:'JetBrains Mono',monospace;font-weight:700;">Weight: −32.0</span></div>
+            <input type="range" class="range-input" id="ys3" min="0" max="1.5" step="0.05" value="0.2" oninput="calcYield()">
+          </div>
+          <div style="background:#071913;border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;"><span>🟤 Bare Soil Gaps</span><span style="color:#fb7185;font-family:'JetBrains Mono',monospace;font-weight:700;">Weight: −26.0</span></div>
+            <input type="range" class="range-input" id="ys4" min="0" max="1.5" step="0.05" value="0.1" oninput="calcYield()">
+          </div>
+        </div>
+
+        <div class="yield-card">
+          <div style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">Final Predicted Corn Yield</div>
+          <div class="yield-big" id="yBig">164.8</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:10px;">Bushels Per Acre</div>
+          <div id="yBadge" style="display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:.82rem;background:rgba(16,185,129,.2);color:#34d399;border:1px solid var(--emerald);">Bumper Harvest</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted);margin-top:12px;" id="yFormula">
+            120.0 + (1.10×22.5) + (1.00×18.0) − (0.20×32.0) − (0.10×26.0) = 164.8
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    <div style="background:linear-gradient(135deg,#0d3829,#1b5e3f);border:1px solid var(--emerald);border-radius:var(--r);padding:24px 28px;margin-top:16px;text-align:center;">
+      <h3 style="font-size:1.5rem;margin-bottom:8px;">🌽 The Complete Journey in 60 Seconds</h3>
+      <p style="color:#d1fae5;font-size:.95rem;max-width:820px;margin:0 auto 14px;">
+        <strong>Before CNN:</strong> Drone image → pixels divided by 255 → decimals between 0 and 1 → standardized around 0.<br><br>
+        <strong>Layer 1:</strong> 32 randomly-born 3×3 filters (trained to perfection) slide across every position, multiplying & adding → 32 Feature Maps of edge/color clues → Activation wipes negatives to 0.<br><br>
+        <strong>Shrinking:</strong> Max Pooling halves the size (224→112) keeping only the strongest signals.<br><br>
+        <strong>Layers 2–16:</strong> Repeat! Each new layer reads ALL previous maps, combining simple clues into complex biological structures (edges → leaves → tassels). Size shrinks (112→56→28→14→7), channels grow (32→64→128→320→1,280).<br><br>
+        <strong>Collapse:</strong> Global Average Pooling averages each 7×7 sheet into 1 number → flat list of 1,280 clue numbers.<br><br>
+        <strong>Final Math:</strong> Each clue × its learned weight → all summed → <strong>One single harvest yield: 164.8 bu/ac!</strong>
+      </p>
+      <button class="btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Back to Top</button>
+    </div>
+
+  </div>
+
+  <script>
+    // --- SECTION 0: Image Grid ---
+    const px8=[
+      [.91,.88,.94,.90,.85,.89,.93,.87],
+      [.86,.92,.89,.93,.88,.85,.90,.89],
+      [.84,.87,.91,.88,.82,.86,.88,.84],
+      [.72,.68,.75,.70,.65,.62,.70,.67],
+      [.22,.18,.25,.20,.16,.19,.21,.18],
+      [.15,.12,.17,.14,.11,.15,.14,.12],
+      [.10,.08,.12,.09,.14,.11,.09,.10],
+      [.12,.15,.09,.11,.08,.13,.10,.11]
+    ];
+    let view0='color';
+
+    function renderGrid0(){
+      const g=document.getElementById('imgGrid0');g.innerHTML='';
+      for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+        const v=px8[r][c],d=document.createElement('div');
+        d.className='mini-cell';d.style.width='38px';d.style.height='38px';d.style.fontSize='.62rem';
+        if(v>.5){const gi=Math.floor(v*160+30);d.style.background=`rgb(20,${gi},45)`;}
+        else{const bi=Math.floor(v*120+20);d.style.background=`rgb(${bi+30},${bi},15)`;}
+        if(view0==='color')d.textContent='';
+        else if(view0==='raw')d.textContent=Math.round(v*255);
+        else d.textContent=v.toFixed(2);
+        d.style.cursor='pointer';
+        d.addEventListener('mouseenter',()=>inspect0(r,c));
+        d.addEventListener('click',()=>inspect0(r,c));
+        g.appendChild(d);
+      }
+    }
+
+    function inspect0(r,c){
+      const v=px8[r][c];
+      document.getElementById('ins0-pos').textContent=`Row ${r+1}, Col ${c+1}`;
+      const t=document.getElementById('ins0-type');
+      if(v>.6){t.textContent='🌿 Healthy Corn Leaf';t.style.color='#4ade80';}
+      else if(v>.4){t.textContent='🔀 Leaf Edge / Transition';t.style.color='#facc15';}
+      else{t.textContent='🟤 Dark Agricultural Soil';t.style.color='#d97706';}
+      const rr=v>.5?Math.round(30+v*20):Math.round(v*200+40),
+            gg=Math.round(v*255),
+            bb=v>.5?Math.round(40+v*10):20;
+      document.getElementById('ins0-rgb').textContent=`R:${rr} G:${gg} B:${bb}`;
+      document.getElementById('ins0-norm').textContent=`[${(rr/255).toFixed(2)}, ${(gg/255).toFixed(2)}, ${(bb/255).toFixed(2)}]`;
+      const sr=((rr/255-.485)/.229).toFixed(2),sg=((gg/255-.456)/.224).toFixed(2),sb=((bb/255-.406)/.225).toFixed(2);
+      document.getElementById('ins0-std').textContent=`[${sr>0?'+'+sr:sr}, ${sg>0?'+'+sg:sg}, ${sb>0?'+'+sb:sb}]`;
+    }
+
+    function setView0(m){view0=m;renderGrid0();}
+
+    // --- SECTION 1: Layer 1 Conv ---
+    const filt1=[[1,1,1],[0,0,0],[-1,-1,-1]];
+    let patch1=[[.90,.85,.92],[.75,.70,.72],[.12,.14,.13]];
+
+    function renderL1(){
+      const pg=document.getElementById('l1PatchGrid'),fg=document.getElementById('l1FilterGrid');
+      pg.innerHTML='';fg.innerHTML='';
+      let total=0,rows=[];
+      for(let r=0;r<3;r++){
+        let rs=0,parts=[];
+        for(let c=0;c<3;c++){
+          const pv=patch1[r][c],fv=filt1[r][c],m=pv*fv;total+=m;rs+=m;
+          parts.push(`(${pv.toFixed(2)}×${fv>=0?'+'+fv:fv})`);
+          const pc=document.createElement('div');pc.className='mini-cell';
+          pc.style.width='42px';pc.style.height='42px';pc.style.fontSize='.72rem';
+          pc.style.background=pv>.5?'rgb(18,130,48)':'rgb(70,40,15)';pc.textContent=pv.toFixed(2);
+          pg.appendChild(pc);
+          const fc=document.createElement('div');fc.className='mini-cell';
+          fc.style.width='42px';fc.style.height='42px';fc.style.fontSize='.82rem';fc.style.fontWeight='800';
+          fc.className=`mini-cell ${fv>0?'c-pos':fv<0?'c-neg':'c-zero'}`;
+          fc.textContent=fv>=0?'+'+fv:''+fv;fg.appendChild(fc);
+        }
+        rows.push(`Row ${r+1}: ${parts.join(' + ')} = ${rs>=0?'+'+rs.toFixed(2):rs.toFixed(2)}`);
+      }
+      const tr=total.toFixed(2);
+      const re=document.getElementById('l1Result');re.textContent=total>=0?'+'+tr:tr;
+      re.style.color=total>1?'#34d399':total>0?'#38bdf8':'#f87171';
+      document.getElementById('l1Math').innerHTML=rows.join('<br>');
+      document.getElementById('l1Total').textContent=total>=0?'+'+tr:tr;
+      document.getElementById('l1Total').style.color=re.style.color;
+      const ex=document.getElementById('l1Explain');
+      if(total>1)ex.innerHTML='💡 <strong>Strong positive!</strong> The filter found a clear pattern match here (e.g., leaf ending on soil). This clue will be passed forward!';
+      else if(total>=0)ex.innerHTML='💡 <strong>Weak/near zero.</strong> No strong pattern match. Uniform area (all leaf or all soil). The CNN says: "Nothing interesting here."';
+      else ex.innerHTML='💡 <strong>Negative!</strong> Opposite of what the filter is looking for. The activation function will wipe this to 0.';
+    }
+
+    function setL1Patch(p){
+      if(p==='edge')patch1=[[.90,.85,.92],[.75,.70,.72],[.12,.14,.13]];
+      else if(p==='leaf')patch1=[[.88,.91,.89],[.90,.92,.91],[.87,.89,.90]];
+      else patch1=[[.14,.11,.15],[.12,.10,.13],[.15,.12,.14]];
+      renderL1();
+    }
+
+    // --- SECTION 1B: Activation ---
+    function updAct(v){
+      v=parseFloat(v);
+      const s=v>=0?'+'+v.toFixed(2):v.toFixed(2);
+      document.getElementById('actVal').textContent=s;
+      document.getElementById('actIn').textContent=s;
+      document.getElementById('actIn').style.color=v>=0?'#34d399':'#f87171';
+      const relu=Math.max(0,v),sig=1/(1+Math.exp(-v)),swish=v*sig;
+      const out=swish;// EfficientNet uses Swish
+      const os=out>0?'+'+out.toFixed(2):out.toFixed(2);
+      document.getElementById('actOut').textContent=os;
+      document.getElementById('actOut').style.color=out>0.01?'#34d399':'#f87171';
+      const ex=document.getElementById('actExpl');
+      if(v>0){
+        ex.innerHTML=`✅ <strong>${s} is positive!</strong> This is a real plant signal. The gate lets it pass through to the next layer (output: ${os}).`;
+        ex.style.color='#d1fae5';
+      } else {
+        ex.innerHTML=`❌ <strong>${s} is negative!</strong> This is meaningless noise (bare dirt, shadow, etc.). The gate squashes it to nearly <strong>0.00</strong>. The CNN ignores this position.`;
+        ex.style.color='#fecaca';
+      }
+    }
+
+    // --- SECTION 6: Yield Calc ---
+    function calcYield(){
+      const x1=parseFloat(document.getElementById('ys1').value),
+            x2=parseFloat(document.getElementById('ys2').value),
+            x3=parseFloat(document.getElementById('ys3').value),
+            x4=parseFloat(document.getElementById('ys4').value);
+      const y=120+x1*22.5+x2*18-x3*32-x4*26;
+      document.getElementById('yBig').textContent=y.toFixed(1);
+      document.getElementById('yFormula').textContent=
+        `120.0 + (${x1.toFixed(2)}×22.5) + (${x2.toFixed(2)}×18.0) − (${x3.toFixed(2)}×32.0) − (${x4.toFixed(2)}×26.0) = ${y.toFixed(1)}`;
+      const b=document.getElementById('yBadge');
+      if(y>=165){b.textContent='🌽 Bumper Harvest!';b.style.background='rgba(16,185,129,.2)';b.style.color='#34d399';b.style.borderColor='#10b981';}
+      else if(y>=140){b.textContent='🌾 Average Yield';b.style.background='rgba(245,158,11,.2)';b.style.color='#facc15';b.style.borderColor='#f59e0b';}
+      else{b.textContent='🚨 Severe Stress / Low Yield';b.style.background='rgba(244,63,94,.2)';b.style.color='#fb7185';b.style.borderColor='#f43f5e';}
+    }
+
+    // --- Layer expand/collapse ---
+    function toggleLayer(el){
+      el.classList.toggle('expanded');
+      const detail=el.nextElementSibling;
+      if(detail&&detail.classList.contains('layer-detail'))detail.classList.toggle('show');
+    }
+
+    // --- Smooth scroll + active nav ---
+    function goTo(id){
+      const el=document.getElementById(id);
+      if(el)window.scrollTo({top:el.offsetTop-60,behavior:'smooth'});
+    }
+    const secs=['s0','s1','s1b','s2','s3','s4','s5','s6'];
+    window.addEventListener('scroll',()=>{
+      const tabs=document.querySelectorAll('.navbtn');
+      let ci=0;
+      secs.forEach((s,i)=>{const e=document.getElementById(s);if(e&&e.getBoundingClientRect().top<=100)ci=i;});
+      tabs.forEach((t,i)=>t.classList.toggle('on',i===ci));
+    });
+
+    // --- Fade-in observer ---
+    const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:.15});
+    document.querySelectorAll('.fade-in').forEach(e=>obs.observe(e));
+
+    // --- Init ---
+    window.onload=function(){renderGrid0();inspect0(1,3);renderL1();updAct(2.2);calcYield();};
+  </script>
+</body>
+</html>

@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaizeSight: Multimodal UAV Remote Sensing & Machine Learning Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0B2019;
+      --card-dark: #123026;
+      --card-dark-border: #265544;
+      --bg-light: #F8FAF8;
+      --card-light: #FFFFFF;
+      --card-light-border: #E2E8F0;
+      --forest: #0F2D24;
+      --gold: #E5A93C;
+      --gold-light: #FEF3C7;
+      --emerald: #2E7D32;
+      --emerald-light: #E8F5E9;
+      --coral: #DC2626;
+      --coral-light: #FEF2F2;
+      --text-dark: #182620;
+      --text-muted: #5A6962;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #061410;
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Top Control Bar */
+    header {
+      background: rgba(11, 32, 25, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--card-dark-border);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      height: 54px;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--gold);
+      letter-spacing: -0.02em;
+    }
+    .brand-pill {
+      background: rgba(229, 169, 60, 0.2);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .btn {
+      background: var(--card-dark);
+      border: 1px solid var(--card-dark-border);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: var(--forest);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .btn-gold {
+      background: var(--gold);
+      color: var(--bg-dark);
+      border-color: var(--gold);
+    }
+    .btn-gold:hover {
+      background: #F3C048;
+      color: #000;
+    }
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #A0B5AC;
+      padding: 0 0.5rem;
+    }
+
+    /* Presentation Deck Viewport */
+    .deck-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem 2rem;
+      position: relative;
+    }
+    .slide-frame {
+      width: 100%;
+      max-width: 1333px;
+      aspect-ratio: 16 / 9;
+      background: var(--bg-light);
+      border-radius: var(--radius);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Slide Themes */
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 2.2rem 2.8rem;
+      display: none;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.25s ease-in-out;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+    }
+    .slide-dark {
+      background: var(--bg-dark);
+      color: #fff;
+    }
+
+    /* Slide Header */
+    .slide-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 0.5rem;
+      width: fit-content;
+    }
+    .tag-emerald { background: var(--emerald-light); color: var(--emerald); border: 1px solid var(--emerald); }
+    .tag-gold { background: rgba(229, 169, 60, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+    
+    .slide-title {
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--forest);
+      letter-spacing: -0.02em;
+    }
+    .slide-dark .slide-title { color: #fff; }
+    .slide-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      margin-bottom: 1.2rem;
+    }
+    .slide-dark .slide-subtitle { color: #A0B5AC; }
+
+    /* Content Layouts */
+    .content-area {
+      flex: 1;
+      display: flex;
+      gap: 1.4rem;
+      min-height: 0;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; width: 100%; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; width: 100%; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; width: 100%; }
+    .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 1rem; width: 100%; }
+
+    .card {
+      background: var(--card-light);
+      border: 1px solid var(--card-light-border);
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .card-dark {
+      background: var(--card-dark);
+      border: 1px solid var(--card-dark-border);
+      color: #fff;
+    }
+    .card-border-gold { border-color: var(--gold); }
+    .card-border-emerald { border-color: #81C784; }
+
+    .card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--forest);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-dark h3 { color: var(--gold); }
+    .card-coral h3 { color: var(--coral); }
+    .card-emerald h3 { color: var(--emerald); }
+
+    .card p, .card li {
+      font-size: 0.86rem;
+      line-height: 1.45;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+    }
+    .card-dark p, .card-dark li { color: #C2D6CC; }
+
+    .bullet-list {
+      list-style: none;
+    }
+    .bullet-list li {
+      position: relative;
+      padding-left: 1.1rem;
+      margin-bottom: 0.6rem;
+    }
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--emerald);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .card-dark .bullet-list li::before { color: var(--gold); }
+    .b-bold { font-weight: 700; color: var(--forest); }
+    .card-dark .b-bold { color: #fff; }
+
+    /* Tables */
+    table.slide-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 0.3rem;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    table.slide-table th {
+      background: var(--forest);
+      color: #fff;
+      padding: 7px 10px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    table.slide-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #EDF2F7;
+      color: var(--text-dark);
+      vertical-align: middle;
+    }
+    table.slide-table tr:nth-child(even) td {
+      background: #F9FBFA;
+    }
+    .val-highlight {
+      font-weight: 700;
+      color: var(--emerald);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .val-coral {
+      font-weight: 700;
+      color: var(--coral);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Images */
+    .img-box {
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      border: 1px solid var(--card-light-border);
+    }
+    .img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Notes Drawer */
+    #notesDrawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(11, 32, 25, 0.98);
+      border-top: 2px solid var(--gold);
+      color: #E2ECE7;
+      padding: 1rem 2rem;
+      max-height: 140px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: none;
+      z-index: 90;
+    }
+    #notesDrawer.visible { display: block; }
+    .notes-title {
+      font-weight: 700;
+      color: var(--gold);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Bottom Status Bar */
+    .status-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.9);
+      border-top: 1px solid var(--card-light-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .slide-dark .status-bar {
+      background: rgba(11, 32, 25, 0.8);
+      border-top: 1px solid var(--card-dark-border);
+      color: #8CA298;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand">
+      <span>🌽 MaizeSight</span>
+      <span class="brand-pill">Research Deck</span>
+    </div>
+    <div class="controls">
+      <button class="btn" id="prevBtn" title="Previous Slide (Left Arrow)">◀ Prev</button>
+      <span class="slide-counter" id="slideIndex">Slide 1 / 19</span>
+      <button class="btn" id="nextBtn" title="Next Slide (Right Arrow / Space)">Next ▶</button>
+      <button class="btn" id="toggleNotesBtn" title="Toggle Speaker Notes (Key: N)">📝 Notes</button>
+      <button class="btn" id="fullscreenBtn" title="Toggle Fullscreen (Key: F)">⛶ Fullscreen</button>
+      <a href="MaizeSight_CornBelt_Yield_Presentation.pptx" download class="btn btn-gold" title="Download PowerPoint .pptx File">⬇ Download PPTX</a>
+    </div>
+  </header>
+
+  <!-- Presentation Main Frame -->
+  <div class="deck-container">
+    <div class="slide-frame">
+
+      <!-- SLIDE 1: TITLE SLIDE -->
+      <div class="slide slide-dark active" id="slide-1">
+        <div class="slide-tag tag-gold">UAV REMOTE SENSING | DEEP VISION | CROSS-SITE ML</div>
+        <h1 class="slide-title" style="font-size: 2.8rem; color: var(--gold); margin-top: 0.5rem;">MaizeSight</h1>
+        <p style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-top: 0.3rem;">
+          Multimodal UAV Remote Sensing & Machine Learning for In-Season Maize Yield Prediction Across the US Corn Belt
+        </p>
+        <p style="font-size: 0.95rem; color: #A0B5AC; margin-top: 0.2rem; margin-bottom: 1.2rem;">
+          High-Resolution Drone Imagery • EfficientNet-B0 Latent Embeddings • Biophysical Canopy Indices • Decoupled Cross-Site Generalization
+        </p>
+        <div class="content-area">
+          <div class="card card-dark" style="flex: 1.3;">
+            <h3 style="color: var(--gold); font-size: 1.05rem;">KEY PROJECT HIGHLIGHTS & ARCHITECTURAL ADVANCES</h3>
+            <ul class="bullet-list" style="margin-top: 0.5rem;">
+              <li><span class="b-bold">Multi-Temporal Triad:</span> Continuous monitoring across emergence (TP1), canopy closure (TP2), and flowering (TP3).</li>
+              <li><span class="b-bold">Dual-Model Strategy:</span> Model 1 In-Domain Specialist (R² = 0.845) vs Model 2 Zero-Shot Generalist (LOLO transfer).</li>
+              <li><span class="b-bold">Audited Dataset:</span> 2,131 verified research plots across 5 sites in Nebraska, Iowa, and Indiana (Dryad).</li>
+              <li><span class="b-bold">Breaking the Negative R² Barrier:</span> Decoupled Field Anchor + Within-Field Ranker flips negative transfer to +0.217.</li>
+            </ul>
+          </div>
+          <div class="img-box" style="flex: 0.9; background: var(--card-dark); border: 1px solid var(--card-dark-border);">
+            <img src="project__imagesss/USA Highlighted Midwest States Map.png" alt="USA Midwest Research Sites Map">
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>MaizeSight Project Presentation</span>
+          <span>Dryad Multi-State Dataset (Shrestha et al.)</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: INTRODUCTION & MOTIVATION -->
+      <div class="slide" id="slide-2">
+        <div class="slide-tag tag-emerald">Section i • Introduction & Motivation</div>
+        <h2 class="slide-title">The Agricultural Imperative: In-Season Yield Intelligence</h2>
+        <p class="slide-subtitle">Why real-time, non-destructive crop monitoring drives economic and food security</p>
+        <div class="content-area grid-3">
+          <div class="card">
+            <h3>1. Food Security & Scale</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">Cornerstone Crop:</span> Maize (Zea mays) is a vital global commodity supplying animal feed, human sustenance, and biofuels.</li>
+              <li><span class="b-bold">Economic Scale:</span> Hundreds of millions of bushels are produced annually in the US Corn Belt, fueling global food markets.</li>
+              <li><span class="b-bold">Climate Shocks:</span> Erratic weather (flash droughts, heatwaves) makes early yield estimation critical for market resilience.</li>
+            </ul>
+          </div>
+          <div class="card card-coral">
+            <h3 style="color: var(--coral);">2. Flaws of Conventional Methods</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">Manual Field Sampling:</span> Destructive, labor-intensive, and too sparse to capture intra-field micro-variability.</li>
+              <li><span class="b-bold">Combine Harvester Monitors:</span> High precision, but data is only available post-harvest—far too late for mid-season nitrogen or irrigation adjustments.</li>
+              <li><span class="b-bold">Satellites (Sentinel/Landsat):</span> Coarse 10m–30m resolution blends adjacent rows; frequent cloud obscuration during flowering.</li>
+            </ul>
+          </div>
+          <div class="card card-emerald" style="border: 2px solid var(--emerald);">
+            <h3 style="color: var(--emerald);">3. The UAV Drone Solution</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">Centimeter Resolution:</span> Resolves individual leaves, row margins, tasseling flowers, and canopy gaps.</li>
+              <li><span class="b-bold">On-Demand Agility:</span> Fly under cloud ceilings precisely during critical milestones: emergence, canopy closure, and flowering.</li>
+              <li><span class="b-bold">Non-Destructive Life-Cycle Tracking:</span> Measures identical physical plots continuously across the full season.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section i: Introduction</span>
+          <span>MaizeSight • US Corn Belt Research</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: PROBLEM STATEMENT -->
+      <div class="slide" id="slide-3">
+        <div class="slide-tag tag-emerald">Section ii • Problem Statement & Relevance</div>
+        <h2 class="slide-title">The Cross-Site Generalization Trap in Precision Agriculture</h2>
+        <p class="slide-subtitle">Why computer vision models fail catastrophically when transferred to new geographic fields</p>
+        <div class="content-area grid-2">
+          <div class="card">
+            <h3>1. The Technical Challenge: Environmental Domain Shift</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">Complex G x E x M Biology:</span> Crop yield is governed by non-linear Genotype x Environment x Management interactions.</li>
+              <li><span class="b-bold">Baseline Yield Shifts:</span> Soil variations (loam vs alluvial), planting dates, and precipitation create massive field baseline offsets. A lush canopy in drought soil yields very differently from one in fertile river soil.</li>
+              <li><span class="b-bold">The Negative R² Barrier:</span> Off-the-shelf CNNs scoring R² > 0.80 within known fields collapse to R² = -1.62 on unseen fields (worse than predicting the field mean!).</li>
+              <li><span class="b-bold">Artifact Memorization:</span> Standard deep models easily memorize site-specific soil colors and sensor angles rather than true crop physiology.</li>
+            </ul>
+          </div>
+          <div class="card" style="border: 2px solid var(--gold);">
+            <h3 style="color: var(--gold);">2. Real-World Relevance & Stakeholder Impact</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">Commercial Farm Managers:</span> Apply variable-rate nitrogen fertilizer at mid-season vegetative growth, maximizing yield while preventing chemical runoff.</li>
+              <li><span class="b-bold">Plant Breeders & Geneticists:</span> Screen thousands of experimental hybrid crosses across multi-acre trial plots without waiting for manual harvest.</li>
+              <li><span class="b-bold">Crop Insurance & Commodity Markets:</span> Objective plot-level yield audits settle drought insurance claims and predict regional harvest volumes weeks in advance.</li>
+              <li><span class="b-bold">Supply-Chain Logistics:</span> Grain elevator operators and shipping fleets can stage railcars and silos based on high-confidence yield forecasts.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section ii: Problem Statement</span>
+          <span>Cross-Site Domain Shift in Agricultural AI</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: OBJECTIVES & SCOPE -->
+      <div class="slide" id="slide-4">
+        <div class="slide-tag tag-emerald">Section iii • Objectives & Scope</div>
+        <h2 class="slide-title">Project Objectives & Scope: Dual-Paradigm Architecture</h2>
+        <p class="slide-subtitle">Architecting high in-domain precision alongside zero-shot cross-geography domain transfer</p>
+        <div class="content-area grid-2x2" style="margin-bottom: 0.5rem;">
+          <div class="card">
+            <h3>1. End-to-End Multimodal Pipeline</h3>
+            <p>Integrate multi-temporal UAV RGB orthomosaics across three phenological stages (TP1, TP2, TP3) with ground-truth agronomic tabular variables (stand count, planting date, pedigree crosses) into a unified computational workflow.</p>
+          </div>
+          <div class="card card-emerald">
+            <h3 style="color: var(--emerald);">2. Dual-Model Architectural Strategy</h3>
+            <p>Build two complementary production models: Model 1 (In-Domain Specialist) maximizing precision across monitored research fields, and Model 2 (Zero-Shot Generalist) overcoming site shifts via a decoupled Field Anchor + Within-Field Ranker.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--gold);">3. Hybrid Vision-Agronomic Feature Space</h3>
+            <p>Extract 1,280-D latent deep embeddings via fine-tuned EfficientNet-B0, fuse with 12 biophysical canopy indices (ExG, VARI, FGCC), model multi-temporal growth velocities, and incorporate pedigree GCA/SCA proxy effects alongside 2D spatial kriging.</p>
+          </div>
+          <div class="card">
+            <h3>4. Production Web Platform with 3D Visualization</h3>
+            <p>Deploy a full-stack web application (FastAPI backend + Three.js/GSAP frontend) offering automated multi-temporal image matching, simultaneous dual-model inference, diagnostic quality flags, and sub-millisecond plot database exploration.</p>
+          </div>
+        </div>
+        <div class="card" style="background: var(--emerald-light); border: 1px solid #81C784; padding: 0.6rem 1rem; text-align: center;">
+          <p style="font-weight: 700; color: var(--forest); margin: 0; font-size: 0.85rem;">
+            PROJECT SCOPE: 5 Midwest Locations (NE, IA, IN) • 2,131 Verified Research Plots • Standardized 15.5% Moisture Grain Yield (bu/ac)
+          </p>
+        </div>
+        <div class="status-bar">
+          <span>Section iii: Objectives & Scope</span>
+          <span>Dual-Paradigm Formulation</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 5: DATASET OVERVIEW -->
+      <div class="slide" id="slide-5">
+        <div class="slide-tag tag-emerald">Dataset Overview • Source, Geography & Modalities</div>
+        <h2 class="slide-title">Multi-State Maize Field Trials from the US Corn Belt</h2>
+        <p class="slide-subtitle">Audited experimental footprint published by Shrestha et al. (2022) on Dryad Repository</p>
+        <div class="content-area grid-2">
+          <div class="card">
+            <h3>1. Geographic Footprint & Diversity (2022 Season)</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">
+              Source: Shrestha et al. (2022) Dryad Digital Repository (doi:10.5061/dryad.905qftttm)
+            </p>
+            <table class="slide-table">
+              <thead>
+                <tr>
+                  <th>Location, State</th>
+                  <th>Plots</th>
+                  <th>Yield (bu/ac)</th>
+                  <th>Environmental Conditions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Scottsbluff, NE</strong></td>
+                  <td>489</td>
+                  <td class="val-highlight">143.4</td>
+                  <td>Semi-arid high-altitude, irrigated</td>
+                </tr>
+                <tr>
+                  <td><strong>Lincoln, NE</strong></td>
+                  <td>504</td>
+                  <td class="val-coral">41.2</td>
+                  <td>Severe seasonal drought & heat shock</td>
+                </tr>
+                <tr>
+                  <td><strong>Ames, IA</strong></td>
+                  <td>487</td>
+                  <td class="val-highlight">130.3</td>
+                  <td>Prime Central Corn Belt loam soil</td>
+                </tr>
+                <tr>
+                  <td><strong>Missouri Valley, IA</strong></td>
+                  <td>163</td>
+                  <td class="val-highlight">152.5</td>
+                  <td>River valley fertile alluvial soil</td>
+                </tr>
+                <tr>
+                  <td><strong>Crawfordsville, IN</strong></td>
+                  <td>488</td>
+                  <td class="val-highlight">165.1</td>
+                  <td>Held-out unseen test site (high yield)</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+              Note: 7,281 raw images were audited down to 2,131 verified plots. North Platte NE was excluded due to published plot mowing artifacts.
+            </p>
+          </div>
+
+          <div class="card card-emerald">
+            <h3 style="color: var(--emerald);">2. Two Primary Data Modalities</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">A. Multi-Temporal Drone Imagery:</span> High-resolution RGB orthomosaics segmented into 4-row plots (.PNG) across 3 growth milestones:
+                <div style="margin-left: 0.5rem; margin-top: 0.2rem; font-size: 0.8rem;">
+                  • <strong>TP1 (V4–V6):</strong> Seedling emergence & stand count.<br>
+                  • <strong>TP2 (V10–V12):</strong> Canopy closure & peak green cover.<br>
+                  • <strong>TP3 (R1):</strong> Anthesis flowering & reproductive tasseling.
+                </div>
+              </li>
+              <li><span class="b-bold">B. Ground Truth Agronomic Measurements:</span> Combine-harvested yield, stand count, days to anthesis, GDD, and hybrid parentage pedigree (female x male inbred lines).</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Dataset Overview</span>
+          <span>Dryad Repository • 2,131 Verified Plots</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 6: DATA PREPROCESSING & REPRESENTATION -->
+      <div class="slide" id="slide-6">
+        <div class="slide-tag tag-emerald">Data Engineering • Preprocessing & Representation</div>
+        <h2 class="slide-title">Data Preprocessing & Multi-Space Representation</h2>
+        <p class="slide-subtitle">Eliminating edge artifacts, preventing data leakage, and constructing rich feature spaces</p>
+        <div class="content-area grid-2">
+          <div class="card">
+            <h3>1. Data Preprocessing Techniques</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">Image Quality Audit & Integrity Screening:</span> Automated removal of corrupted headers, blurred frames, and blank tiles; aligned image filenames with harvest records.</li>
+              <li><span class="b-bold">Replication-Padded Tiling (224x224):</span> Diced plot bounding boxes into 224x224 patches using <code>cv2.BORDER_REPLICATE</code>. Preserved perimeter leaves without artificial black zero-padding borders.</li>
+              <li><span class="b-bold">Strict Plot-Level Anti-Leakage Splitting:</span> Guaranteed all 3 seasonal flights (TP1, TP2, TP3) for any plot stayed strictly within the same data split. Never trained on TP1 and tested on TP3 of the same plot!</li>
+              <li><span class="b-bold">Tabular Imputation & Flight-Level Z-Scoring:</span> Median imputation for stand counts and planting dates. Normalized solar elevation and cloud illumination shifts via flight-level z-scoring.</li>
+            </ul>
+          </div>
+
+          <div class="card card-emerald">
+            <h3 style="color: var(--emerald);">2. Four Numerical Feature Representation Spaces</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">A. Deep Latent Vision Space (R¹²⁸⁰):</span> Fine-tuned EfficientNet-B0 maps each 224x224 patch into a 1,280-D vector. Mean and standard deviation pooling aggregate patches into a plot-level visual fingerprint.</li>
+              <li><span class="b-bold">B. Biophysical Canopy Indices (R¹² per flight):</span> Calculates physiological vegetation metrics: Excess Green (ExG = 2G - R - B), VARI, NGRDI, Fractional Green Canopy Cover (FGCC), and yellow tassel senescence fraction.</li>
+              <li><span class="b-bold">C. Multi-Temporal Dynamic Vectors:</span> Growth velocity vectors (ΔTP2-TP1, ΔTP3-TP2) measuring the rate of canopy expansion and speed of reproductive maturation.</li>
+              <li><span class="b-bold">D. Genetic & Spatial Representation:</span> Parental pedigree deconstruction into GCA/SCA proxy effects, plus 2D spatial kriging surfaces converting range and row coordinates into micro-soil fertility trends.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Data Engineering</span>
+          <span>Zero-Leakage Splitting & 4 Representation Spaces</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 7: EXPLORATORY DATA ANALYSIS -->
+      <div class="slide" id="slide-7">
+        <div class="slide-tag tag-emerald">Exploratory Data Analysis • Patterns & Insights</div>
+        <h2 class="slide-title">Exploratory Data Analysis & Empirical Discoveries</h2>
+        <p class="slide-subtitle">Uncovering severe cross-site heterogeneity, temporal dynamics, and data completeness</p>
+        <div class="content-area">
+          <div style="flex: 1.2; display: flex; flex-direction: column; gap: 0.8rem;">
+            <div class="grid-2" style="flex: 1;">
+              <div class="card">
+                <h3>1. Cross-Site Heterogeneity</h3>
+                <p>Lincoln NE averaged 41.2 bu/ac due to drought shock, while Crawfordsville IN reached 165.1 bu/ac. Proves that global intercept models fail without field baseline anchoring.</p>
+              </div>
+              <div class="card">
+                <h3 style="color: var(--emerald);">2. Data Completeness</h3>
+                <p>7,281 raw files audited down to 2,131 verified plots across 3 flights, yielding 6,393 verified multi-temporal image sequences.</p>
+              </div>
+            </div>
+            <div class="grid-2" style="flex: 1;">
+              <div class="card">
+                <h3 style="color: var(--gold);">3. Multi-Temporal Dynamics</h3>
+                <p>TP1 = soil dominant (>80%), stand count drives biomass; TP2 = rapid canopy closure (>70%); TP3 = yellow tassel emergence exhibiting strongest yield correlation.</p>
+              </div>
+              <div class="card">
+                <h3>4. Edge Artifact Analysis</h3>
+                <p>Zero-padding created sharp contrast cliffs that corrupted CNN filters; Replication padding preserved leaf margins smoothly.</p>
+              </div>
+            </div>
+          </div>
+          <div class="img-box" style="flex: 0.9;">
+            <img src="project__imagesss/UAV Maize Dataset Audit Dashboard.png" alt="Dataset Audit Dashboard">
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Exploratory Data Analysis</span>
+          <span>Heterogeneity & Multi-Temporal Patterns</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 8: DEDICATED SLIDE: HOW CNN WORKS & ROLE IN MAIZESIGHT -->
+      <div class="slide" id="slide-8">
+        <div class="slide-tag tag-emerald">Deep Learning Mechanisms • Computer Vision</div>
+        <h2 class="slide-title">How CNNs Work & Their Role in MaizeSight</h2>
+        <p class="slide-subtitle">Spatial feature extraction, hierarchical feature learning, and fine-tuned EfficientNet-B0</p>
+        <div class="content-area" style="display: flex; gap: 1.2rem; align-items: stretch;">
+          <div class="img-box" style="flex: 1.4; background: #0b2019; border: 1px solid #265544; border-radius: 12px; overflow: hidden; padding: 4px;">
+            <img src="project__imagesss/cnn_pipeline_diagram.jpg" alt="MaizeSight CNN Architecture Infographic" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+          </div>
+          <div class="card card-emerald" style="flex: 0.85; overflow-y: auto;">
+            <h3 style="color: var(--emerald); font-size: 1rem;">Core Pipeline Stages</h3>
+            <ul class="bullet-list" style="font-size: 0.78rem;">
+              <li><span class="b-bold">1. Replication-Padded Tiling:</span> Dices raw plot images into 224×224 patches using <code>BORDER_REPLICATE</code> to preserve leaf boundaries.</li>
+              <li><span class="b-bold">2. Convolutional Filtering:</span> Slides 3×3 kernels across patches, learning edges, textures, and row geometry.</li>
+              <li><span class="b-bold">3. EfficientNet-B0 Backbone:</span> Compound scaling with MBConv blocks & SE attention (5.3M params prevents overfitting).</li>
+              <li><span class="b-bold">4. 1,280-D Latent Extractor:</span> Truncated classification head emits a dense 1,280-dimensional feature embedding per patch.</li>
+              <li><span class="b-bold">5. Mean & Std Pooling:</span> Aggregates patch embeddings across the plot for flights TP1, TP2, TP3 to feed XGBoost.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Deep Learning Architecture</span>
+          <span>EfficientNet-B0 & 1,280-D Plot Embeddings</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 9: DEDICATED SLIDE: HOW XGBOOST WORKS & ROLE IN MAIZESIGHT -->
+      <div class="slide" id="slide-9">
+        <div class="slide-tag tag-emerald">Machine Learning Mechanisms • Gradient Boosting</div>
+        <h2 class="slide-title">How XGBoost Works & Its Role in MaizeSight</h2>
+        <p class="slide-subtitle">Second-order Taylor optimization, regularized ensembles, and multimodal tabular fusion</p>
+        <div class="content-area" style="display: flex; gap: 1.2rem; align-items: stretch;">
+          <div class="img-box" style="flex: 1.4; background: #0b2019; border: 1px solid #265544; border-radius: 12px; overflow: hidden; padding: 4px;">
+            <img src="project__imagesss/xgboost_pipeline_diagram.jpg" alt="MaizeSight XGBoost Architecture Infographic" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+          </div>
+          <div class="card" style="flex: 0.85; border: 2px solid var(--gold); overflow-y: auto;">
+            <h3 style="color: var(--gold); font-size: 1rem;">Core XGBoost Roles</h3>
+            <ul class="bullet-list" style="font-size: 0.78rem;">
+              <li><span class="b-bold">1. Multimodal Fusion:</span> Harmonizes continuous 1,280-D CNN vectors, 12 biophysical ratios, hybrid pedigree crosses, and spatial kriging coordinates.</li>
+              <li><span class="b-bold">2. Sequential Residuals:</span> Builds trees sequentially correcting prior errors: <code>ŷ_i^(t) = ŷ_i^(t-1) + η · f_t(x_i)</code>.</li>
+              <li><span class="b-bold">3. 2nd-Order Optimization:</span> Evaluates exact 1st-order gradients (g_i) and 2nd-order Hessians (h_i) for fast convergence.</li>
+              <li><span class="b-bold">4. L1/L2 Regularization:</span> Penalizes leaf weights (α, λ) and tree complexity (γ) to stop memorizing noisy plot outliers.</li>
+              <li><span class="b-bold">5. Multi-Depth Hierarchy:</span> Depth 2 captures macro weather/planting trends; Depth 4 models micro-plot soil vigor.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Machine Learning Architecture</span>
+          <span>XGBoost Gradient Boosting & Multimodal Fusion</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 10: ALGORITHM SELECTION & ENSEMBLING -->
+      <div class="slide" id="slide-10">
+        <div class="slide-tag tag-emerald">Model Architecture • Algorithm Selection</div>
+        <h2 class="slide-title">Algorithm Selection & Architectural Ensembling</h2>
+        <p class="slide-subtitle">Balancing deep visual representations with regularized, multi-algorithmic ensembles</p>
+        <div class="content-area grid-3">
+          <div class="card">
+            <h3>1. Vision Backbone</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">EfficientNet-B0:</span> Compound scaling ensures high accuracy with only 5.3M parameters, preventing overfitting on agricultural trial plots.</li>
+              <li><span class="b-bold">Pre-Training & Fine-Tuning:</span> Pre-trained on ImageNet and fine-tuned end-to-end on multi-state maize plot patches.</li>
+              <li><span class="b-bold">1,280-D Latent Extractor:</span> Truncated classification head outputs continuous visual embeddings for tabular regressors.</li>
+            </ul>
+          </div>
+
+          <div class="card card-emerald">
+            <h3 style="color: var(--emerald);">2. Tabular Regressors</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">XGBoost:</span> Fast second-order Taylor optimization; native handling of non-linear G x E interactions.</li>
+              <li><span class="b-bold">ExtraTrees:</span> Randomizes split thresholds across candidate features, suppressing remote sensing noise.</li>
+              <li><span class="b-bold">HistGradientBoosting:</span> Discretizes variables into 256 integer bins, providing complementary decision boundaries.</li>
+              <li><span class="b-bold">RidgeCV:</span> Penalizes collinearly correlated canopy indices and establishes stable baseline predictions.</li>
+            </ul>
+          </div>
+
+          <div class="card" style="border: 2px solid var(--gold);">
+            <h3 style="color: var(--gold);">3. Ensembling Strategy</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">Model 1 (Three-View Specialist):</span> Blends Core View (113 features), Full View, and Physical View via learned meta-weights, finished with empirical γ-variance calibration (R² = 0.8454).</li>
+              <li><span class="b-bold">Model 2 (Decoupled Generalist):</span> Stage 1: Field Physical Anchor; Stage 2: Within-Field Ranker; Stage 3: Few-shot Bayesian calibration with 15 reference plots.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Model Architecture</span>
+          <span>Ensemble Design & Algorithmic Diversity</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 11: TRAINING & VALIDATION METHODOLOGY -->
+      <div class="slide" id="slide-11">
+        <div class="slide-tag tag-emerald">Experimental Methodology • Rigor & Validation</div>
+        <h2 class="slide-title">Model Training & Validation Methodology</h2>
+        <p class="slide-subtitle">Zero-leakage group splitting, dual validation schemes, and phased training workflow</p>
+        <div class="content-area" style="display: flex; gap: 1.2rem; align-items: stretch;">
+          <div class="img-box" style="flex: 1.35; background: #0b2019; border: 1px solid #265544; border-radius: 12px; overflow: hidden; padding: 4px;">
+            <img src="project__imagesss/training_pipeline_diagram.jpg" alt="MaizeSight Training & Validation Pipeline Infographic" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+          </div>
+          <div class="card" style="flex: 0.9; border: 2px solid var(--emerald); overflow-y: auto;">
+            <h3 style="color: var(--emerald); font-size: 1rem;">Anti-Leakage & Phased Pipeline</h3>
+            <ul class="bullet-list" style="font-size: 0.76rem;">
+              <li><span class="b-bold">1. Plot-Level Group Locking:</span> Multi-flight temporal leakage is strictly prevented by grouping all 3 flights (TP1, TP2, TP3) of any plot into the same fold.</li>
+              <li><span class="b-bold">2. Phase A (Backbone Fine-Tuning):</span> EfficientNet-B0 trained on 224x224 RGB patches with AdamW, learning rate warmup, and cosine decay.</li>
+              <li><span class="b-bold">3. Phase B (Frozen State Transforms):</span> StandardScalers, prototype cosine similarity matrices, and 2D spatial kriging surfaces fitted ONLY on train splits.</li>
+              <li><span class="b-bold">4. Phase C (GBDT Out-of-Fold Tuning):</span> Stratified group CV across XGBoost, ExtraTrees, HistGB, and RidgeCV with tree depth 2–4 and η ∈ [0.018, 0.03].</li>
+              <li><span class="b-bold">5. Dual Validation Regimes:</span> Model 1 uses 5-site Stratified Group Split (70/15/15); Model 2 tests true generalization via Leave-One-Location-Out (LOLO) on 100% unseen Crawfordsville, IN.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Experimental Methodology</span>
+          <span>Stratified Group vs Leave-One-Location-Out</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 12: RESULTS: MODEL 1 -->
+      <div class="slide" id="slide-12">
+        <div class="slide-tag tag-emerald">Section v • Results & Discussion</div>
+        <h2 class="slide-title">Model 1 Results: Step-by-Step Performance Progression</h2>
+        <p class="slide-subtitle">Ablation study on 323 held-out test plots across all 5 monitored research locations</p>
+        <div class="content-area">
+          <div style="flex: 1.2; display: flex; flex-direction: column; gap: 0.8rem;">
+            <table class="slide-table">
+              <thead>
+                <tr>
+                  <th>Progression Stage</th>
+                  <th>R² Score</th>
+                  <th>RMSE (bu/ac)</th>
+                  <th>Performance Gain</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Step 1: Raw TP3 Vision Model</td>
+                  <td>0.7940</td>
+                  <td>24.11</td>
+                  <td>Single-flight baseline</td>
+                </tr>
+                <tr>
+                  <td>Step 2: Multiple Flights (TP1–TP3)</td>
+                  <td>0.8087</td>
+                  <td>23.23</td>
+                  <td>+1.47% R² via growth dynamics</td>
+                </tr>
+                <tr>
+                  <td>Step 3: Vision + Canopy Indices</td>
+                  <td>0.8178</td>
+                  <td>22.67</td>
+                  <td>-0.56 bu/ac RMSE via color math</td>
+                </tr>
+                <tr>
+                  <td>Step 4: Pedigree + Spatial Kriging</td>
+                  <td>0.8436</td>
+                  <td>21.01</td>
+                  <td>+2.58% R² via micro-soil mapping</td>
+                </tr>
+                <tr>
+                  <td><strong>Step 5: 3-View Stacked Ensemble</strong></td>
+                  <td class="val-highlight">0.8454</td>
+                  <td class="val-highlight">20.88</td>
+                  <td><strong>Final specialist precision</strong></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="card card-emerald" style="flex: 1;">
+              <h3 style="color: var(--emerald); font-size: 0.95rem;">Key Takeaways for Model 1</h3>
+              <ul class="bullet-list" style="font-size: 0.8rem;">
+                <li><span class="b-bold">Multi-Temporal Triad:</span> Adding TP1 & TP2 reduced RMSE by ~0.9 bu/ac over single-flight imagery.</li>
+                <li><span class="b-bold">Canopy Indices:</span> 12 explicit vegetation ratios provided mathematical constraints reducing error by 0.56 bu/ac.</li>
+                <li><span class="b-bold">Spatial Kriging & Genetics:</span> Largest single leap, lowering RMSE by >1.66 bu/ac through soil elevation & parentage modeling.</li>
+                <li><span class="b-bold">Final Precision:</span> 3-view ensemble explains 84.5% of total yield variance with 16.53 bu/ac MAE.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="img-box" style="flex: 0.9;">
+            <img src="project__imagesss/step_comparison_charts/1_R2_Comparison_Model1_vs_Model2.png" alt="Model 1 vs Model 2 R2 Comparison Chart">
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section v: Results</span>
+          <span>Model 1 Ablation: 0.794 → 0.845 R²</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 13: RESULTS: MODEL 2 -->
+      <div class="slide" id="slide-13">
+        <div class="slide-tag tag-emerald">Section v • Results & Discussion</div>
+        <h2 class="slide-title">Model 2 Results: Overcoming the Cross-Site Domain Shift</h2>
+        <p class="slide-subtitle">Leave-One-Location-Out evaluation on 488 unseen test plots at Crawfordsville, Indiana</p>
+        <div class="content-area">
+          <div style="flex: 1.2; display: flex; flex-direction: column; gap: 0.8rem;">
+            <table class="slide-table">
+              <thead>
+                <tr>
+                  <th>Progression Stage</th>
+                  <th>R² Score</th>
+                  <th>RMSE (bu/ac)</th>
+                  <th>Performance Discussion</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Step 1: Frozen TP3 Vision Backbone</td>
+                  <td class="val-coral">-1.6207</td>
+                  <td>39.95</td>
+                  <td>Severe failure of naive transfer</td>
+                </tr>
+                <tr>
+                  <td>Step 2: Multi-Flight + Planting Date</td>
+                  <td class="val-coral">-0.6072</td>
+                  <td>31.29</td>
+                  <td>Environmental offset correction</td>
+                </tr>
+                <tr>
+                  <td>Step 3: Fine-Tuned Backbone</td>
+                  <td class="val-coral">-0.4431</td>
+                  <td>29.65</td>
+                  <td>Feature adaptation to maize</td>
+                </tr>
+                <tr>
+                  <td>Step 4: LOLO Normalization + Spatial</td>
+                  <td class="val-coral">-0.2514</td>
+                  <td>27.61</td>
+                  <td>Mitigating site-specific bias</td>
+                </tr>
+                <tr>
+                  <td><strong>Step 5: Final Zero-Shot Ensemble</strong></td>
+                  <td class="val-highlight">+0.1398</td>
+                  <td>22.89</td>
+                  <td><strong>Flips negative R² to positive</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>Step 6: With 15-Plot Calibration</strong></td>
+                  <td class="val-highlight">+0.2168</td>
+                  <td class="val-highlight">21.89</td>
+                  <td><strong>Rapid few-shot adaptation</strong></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="card" style="border: 2px solid var(--gold); flex: 1;">
+              <h3 style="color: var(--gold); font-size: 0.95rem;">Key Takeaways for Model 2</h3>
+              <ul class="bullet-list" style="font-size: 0.8rem;">
+                <li><span class="b-bold">Failure of Naive Transfer:</span> Off-the-shelf CNN transfer scored negative R² = -1.62 due to baseline shifts between Nebraska and Indiana soil.</li>
+                <li><span class="b-bold">Decoupled Anchor-Ranker:</span> Separating macro field potential from within-field relative ranking flipped R² into positive territory (+0.140) in pure zero-shot mode.</li>
+                <li><span class="b-bold">Rapid Calibration:</span> Providing just 15 labeled reference plots boosted R² to +0.217 and lowered RMSE to 21.89 bu/ac.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="img-box" style="flex: 0.9;">
+            <img src="project__imagesss/crawfordsville_test_comparison_chart.png" alt="Crawfordsville Test Comparison Chart">
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section v: Results</span>
+          <span>Model 2 Generalization: -1.62 → +0.217 R²</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 14: COMPARISON OF ALTERNATIVE APPROACHES -->
+      <div class="slide" id="slide-14">
+        <div class="slide-tag tag-emerald">Algorithmic Benchmarking • Architectural Decisions</div>
+        <h2 class="slide-title">Comparison of Alternative Algorithms & Approaches</h2>
+        <p class="slide-subtitle">Why conventional deep learning and single-flight setups fell short</p>
+        <div class="content-area">
+          <div class="card" style="width: 100%;">
+            <table class="slide-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Design Dimension</th>
+                  <th>Conventional / Alternative Approach</th>
+                  <th>MaizeSight Chosen Approach</th>
+                  <th>Key Advantage / Empirical Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Vision Backbone</strong></td>
+                  <td>ResNet-50 / VGG-16 / ViT (25M–86M params; overfits on trial plots)</td>
+                  <td><strong style="color: var(--emerald);">EfficientNet-B0 (5.3M params)</strong></td>
+                  <td>Lower parameter footprint prevents overfitting; 4x faster feature extraction throughput</td>
+                </tr>
+                <tr>
+                  <td><strong>Plot Tiling & Edge</strong></td>
+                  <td>Zero-Padding (cv2.BORDER_CONSTANT; creates sharp black border gradients)</td>
+                  <td><strong style="color: var(--emerald);">Replication Padding (BORDER_REPLICATE)</strong></td>
+                  <td>Preserves perimeter leaf geometry & row margins; eliminates fake zero-gradient edges</td>
+                </tr>
+                <tr>
+                  <td><strong>Sensing Strategy</strong></td>
+                  <td>Single-Flight Snapshot at Flowering (Evaluates canopy solely at anthesis / R1)</td>
+                  <td><strong style="color: var(--emerald);">Multi-Temporal Triad (TP1 + TP2 + TP3)</strong></td>
+                  <td>Captures growth velocity deltas; yields +1.5% R² gain over single-flight models</td>
+                </tr>
+                <tr>
+                  <td><strong>Tabular Predictor</strong></td>
+                  <td>Single Standalone XGBoost or Random Forest (Prone to algorithm-specific variance)</td>
+                  <td><strong style="color: var(--emerald);">Multi-View Stacked Ensemble</strong></td>
+                  <td>Blends XGBoost + ExtraTrees + HistGB + Ridge; pushes in-domain R² to 0.845</td>
+                </tr>
+                <tr>
+                  <td><strong>Cross-Site Transfer</strong></td>
+                  <td>Direct Monolithic Regression (Scored catastrophic negative R² = -1.62 on Indiana site)</td>
+                  <td><strong style="color: var(--emerald);">Decoupled Anchor + Ranker</strong></td>
+                  <td>Flips negative R² to positive (+0.140 zero-shot, +0.217 with 15 calibration plots)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Algorithmic Benchmarking</span>
+          <span>Architectural Trade-Offs & Decisions</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 15: SOFTWARE IMPLEMENTATION -->
+      <div class="slide" id="slide-15">
+        <div class="slide-tag tag-emerald">System Implementation • Production Deployment</div>
+        <h2 class="slide-title">Software Implementation: The MaizeSight Web Platform</h2>
+        <p class="slide-subtitle">FastAPI asynchronous backend, 3D geospatial visualization, and real-time dual-model inference</p>
+        <div class="content-area" style="display: flex; gap: 1.2rem; align-items: stretch;">
+          <div class="img-box" style="flex: 1.35; background: #0b2019; border: 1px solid #265544; border-radius: 12px; overflow: hidden; padding: 4px;">
+            <img src="project__imagesss/inference_pipeline_diagram.jpg" alt="MaizeSight Dual-Engine AI Inference Pipeline Infographic" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+          </div>
+          <div class="card" style="flex: 0.9; border: 2px solid var(--forest); overflow-y: auto;">
+            <h3 style="color: var(--forest); font-size: 1rem;">Production Inference & Serving</h3>
+            <ul class="bullet-list" style="font-size: 0.76rem;">
+              <li><span class="b-bold">1. Ingestion & Image Extraction:</span> Automated regex parsing binds multi-flight drone tiles; dual EfficientNet-B0 backbones extract 1,280-D features with 12 biophysical RGB ratios.</li>
+              <li><span class="b-bold">2. Frozen Transform State:</span> Pre-computed scalers, genotype prototype cosine matrices, and 2D spatial kriging surfaces applied in sub-second inference without retraining.</li>
+              <li><span class="b-bold">3. Parallel Dual-Model Execution:</span> Model 1 delivers in-domain 3-view stacked precision (R² = 0.8454); Model 2 executes decoupled Field Physical Anchoring + Relative Within-Field Ranking with optional 15-plot few-shot calibration.</li>
+              <li><span class="b-bold">4. Diagnostic Quality Guardrails:</span> Emits runtime data safety flags (<code>tp3_image_missing</code>, <code>image_error_corrupt</code>, <code>small_field_warning</code>).</li>
+              <li><span class="b-bold">5. FastAPI & 3D Interactive UI:</span> High-concurrency async API serving live predictions to a Three.js 3D topographic Corn Belt map with interactive yield heatmaps.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>System Implementation</span>
+          <span>FastAPI Backend + Three.js 3D Frontend</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 16: CONCLUSION & SCIENTIFIC LEARNINGS -->
+      <div class="slide" id="slide-16">
+        <div class="slide-tag tag-emerald">Section vi • Conclusion & Takeaways</div>
+        <h2 class="slide-title">Conclusion: Key Insights & Scientific Learnings</h2>
+        <p class="slide-subtitle">Summary of project contributions and fundamental takeaways for agricultural AI</p>
+        <div class="content-area grid-2x2">
+          <div class="card">
+            <h3>1. Multi-Temporal Sensing is Non-Negotiable</h3>
+            <p>Single-flight snapshots cannot separate temporary weather stress from true physiological potential. Combining early emergence (TP1), peak canopy closure (TP2), and flowering anthesis (TP3) is essential for high-confidence harvest estimation.</p>
+          </div>
+          <div class="card card-emerald">
+            <h3 style="color: var(--emerald);">2. Hybrid Feature Fusion Trumps Pure Vision</h3>
+            <p>Coupling deep CNN embeddings (EfficientNet-B0) with biophysical canopy indices (ExG, VARI), hybrid parental pedigrees, and 2D spatial kriging significantly outperforms black-box image-to-yield neural networks.</p>
+          </div>
+          <div class="card" style="border: 2px solid var(--gold);">
+            <h3 style="color: var(--gold);">3. Decoupling Solves Cross-Site Domain Shift</h3>
+            <p>Monolithic models fail when deployed to new farms because baseline yields vary wildly. Decoupling macro field-level yield anchoring from within-field spatial ranking flips negative cross-site R² to positive zero-shot performance.</p>
+          </div>
+          <div class="card">
+            <h3>4. Few-Shot Field Calibration is Practical & Scalable</h3>
+            <p>Measuring as few as 15 reference calibration plots in an unfamiliar field boosts generalization R² to +0.217 and drops RMSE to 21.89 bu/ac, providing a highly cost-effective operational blueprint for commercial growers.</p>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section vi: Conclusion</span>
+          <span>Fundamental Contributions & Takeaways</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 17: FUTURE ENHANCEMENTS -->
+      <div class="slide" id="slide-17">
+        <div class="slide-tag tag-emerald">Section vi • Future Work & Roadmap</div>
+        <h2 class="slide-title">Future Enhancements & Research Roadmap</h2>
+        <p class="slide-subtitle">Scaling MaizeSight from research trial plots to continental production agriculture</p>
+        <div class="content-area grid-4">
+          <div class="card">
+            <h3>1. Multispectral & Thermal Fusion</h3>
+            <ul class="bullet-list" style="font-size: 0.8rem;">
+              <li><span class="b-bold">Thermal Infrared:</span> Capture canopy surface temperature and transpiration cooling to detect early moisture stress.</li>
+              <li><span class="b-bold">RedEdge Wavebands:</span> Directly quantify chlorophyll-a/b absorption for precise nitrogen status mapping.</li>
+            </ul>
+          </div>
+          <div class="card card-emerald">
+            <h3 style="color: var(--emerald);">2. Satellite-UAV Harmonization</h3>
+            <ul class="bullet-list" style="font-size: 0.8rem;">
+              <li><span class="b-bold">Harmonized Constellations:</span> Fuse high-frequency UAV imagery with Sentinel-2 and PlanetScope satellite data.</li>
+              <li><span class="b-bold">Gap-Filling:</span> Use satellite temporal curves to bridge cloudy periods between scheduled drone flights.</li>
+            </ul>
+          </div>
+          <div class="card" style="border: 2px solid var(--gold);">
+            <h3 style="color: var(--gold);">3. Spatio-Temporal Transformers</h3>
+            <ul class="bullet-list" style="font-size: 0.8rem;">
+              <li><span class="b-bold">Vision Transformers (ViT):</span> Replace manual multi-step pooling with 3D spatio-temporal self-attention.</li>
+              <li><span class="b-bold">Dynamic Phenology:</span> Learn cross-flight attention weights to track variable crop emergence timelines.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>4. Edge AI On-Drone Inference</h3>
+            <ul class="bullet-list" style="font-size: 0.8rem;">
+              <li><span class="b-bold">Quantization & TensorRT:</span> Convert PyTorch / XGBoost models to INT8 ONNX/TensorRT engines.</li>
+              <li><span class="b-bold">NVIDIA Jetson Payloads:</span> Run live yield estimation and diagnostic flagging on companion drone computers in flight.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section vi: Future Work</span>
+          <span>Scaling to Continental Crop Intelligence</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 18: REFERENCES -->
+      <div class="slide" id="slide-18">
+        <div class="slide-tag tag-emerald">Section vii • Academic References</div>
+        <h2 class="slide-title">References & Foundational Literature</h2>
+        <p class="slide-subtitle">Peer-reviewed literature across remote sensing, deep vision, gradient boosting, and agronomy</p>
+        <div class="content-area grid-2">
+          <div class="card">
+            <h3>Remote Sensing & Agricultural Data</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">1. Shrestha, S., et al. (2022).</span><br>
+                Crop performance, aerial, and satellite data from multistate maize yield trials. Dryad Digital Repository. doi:10.5061/dryad.905qftttm.
+              </li>
+              <li><span class="b-bold">2. Woebbecke, D. M., et al. (1995).</span><br>
+                Color indices for weed identification under various soil, residue, and lighting conditions. Transactions of the ASAE, 38(1), 259–269. (Excess Green - ExG).
+              </li>
+              <li><span class="b-bold">3. Gitelson, A. A., et al. (2002).</span><br>
+                Novel algorithms for remote estimation of vegetation fraction. Remote Sensing of Environment, 80(1), 76–87. (VARI Index).
+              </li>
+            </ul>
+          </div>
+
+          <div class="card card-emerald">
+            <h3 style="color: var(--emerald);">Computer Vision & Machine Learning</h3>
+            <ul class="bullet-list">
+              <li><span class="b-bold">4. Tan, M., & Le, Q. V. (2019).</span><br>
+                EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks. International Conference on Machine Learning (ICML), PMLR, 6105–6114.
+              </li>
+              <li><span class="b-bold">5. Chen, T., & Guestrin, C. (2016).</span><br>
+                XGBoost: A Scalable Tree Boosting System. Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 785–794.
+              </li>
+              <li><span class="b-bold">6. Peng, H., Long, F., & Ding, C. (2005).</span><br>
+                Feature selection based on mutual information: criteria of max-dependency, max-relevance, and min-redundancy. IEEE TPAMI, 27(8), 1226–1238.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section vii: References</span>
+          <span>Peer-Reviewed Citations</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 19: CONTRIBUTORS & ACKNOWLEDGEMENTS -->
+      <div class="slide slide-dark" id="slide-19">
+        <div class="slide-tag tag-gold">Section viii • Project Team & Acknowledgements</div>
+        <h2 class="slide-title" style="color: var(--gold);">Contributors & Acknowledgements</h2>
+        <p class="slide-subtitle" style="color: #A0B5AC;">Multidisciplinary collaboration spanning machine learning, remote sensing, agronomy, and software engineering</p>
+        <div class="content-area" style="flex-direction: column; gap: 1rem;">
+          <div class="grid-4" style="flex: 1.2;">
+            <div class="card card-dark">
+              <h3 style="color: var(--gold);">Contributor 1</h3>
+              <p style="font-weight: 700; color: #fff;">Machine Learning Lead</p>
+              <p style="color: #81C784; font-size: 0.75rem;">EfficientNet-B0 Backbone</p>
+              <p style="font-size: 0.8rem; margin-top: 0.4rem;">Fine-tuned deep vision models, extracted 1,280-D patch embeddings, and engineered Model 1 three-view stacked ensemble.</p>
+            </div>
+            <div class="card card-dark">
+              <h3 style="color: var(--gold);">Contributor 2</h3>
+              <p style="font-weight: 700; color: #fff;">Data & Remote Sensing</p>
+              <p style="color: #81C784; font-size: 0.75rem;">UAV Image Preprocessing</p>
+              <p style="font-size: 0.8rem; margin-top: 0.4rem;">Audited 7,281 drone files, implemented replication padding, extracted 12 biophysical canopy indices, and computed temporal velocities.</p>
+            </div>
+            <div class="card card-dark">
+              <h3 style="color: var(--gold);">Contributor 3</h3>
+              <p style="font-weight: 700; color: #fff;">Cross-Domain Lead</p>
+              <p style="color: #81C784; font-size: 0.75rem;">Decoupled Architecture</p>
+              <p style="font-size: 0.8rem; margin-top: 0.4rem;">Designed Leave-One-Location-Out cross-validation, formulated Anchor-Ranker architecture, and developed few-shot calibration.</p>
+            </div>
+            <div class="card card-dark">
+              <h3 style="color: var(--gold);">Contributor 4</h3>
+              <p style="font-weight: 700; color: #fff;">Full-Stack Architect</p>
+              <p style="color: #81C784; font-size: 0.75rem;">FastAPI & 3D Web Platform</p>
+              <p style="font-size: 0.8rem; margin-top: 0.4rem;">Constructed high-speed asynchronous REST API, interactive Three.js 3D terrain canvas, automated regex file matcher, and quality flaggers.</p>
+            </div>
+          </div>
+
+          <div class="card card-dark" style="border: 2px solid var(--gold); padding: 0.8rem 1.4rem;">
+            <h3 style="color: var(--gold); font-size: 0.95rem; margin-bottom: 0.2rem;">PROJECT ACKNOWLEDGEMENTS & OPEN SOURCE ECOSYSTEM</h3>
+            <p style="font-size: 0.85rem; color: #fff; margin: 0;">
+              Special thanks to project mentors, research faculty, and the open-source community powering PyTorch, XGBoost, Scikit-learn, OpenCV, FastAPI, and Three.js.<br>
+              <strong>Thank you for your attention! We now welcome questions and discussion.</strong>
+            </p>
+          </div>
+        </div>
+        <div class="status-bar">
+          <span>Section viii: Contributors & Closing</span>
+          <span>Thank You! Questions & Discussion</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Speaker Notes Drawer -->
+  <div id="notesDrawer">
+    <div class="notes-title">SPEAKER NOTES (<span id="notesSlideNumber">Slide 1</span>)</div>
+    <div id="notesContent">Speaker notes will load dynamically for the active slide.</div>
+  </div>
+
+  <script>
+    const speakerNotes = [
+      "Welcome to the MaizeSight presentation. Today we will present a complete multimodal remote sensing and machine learning system that accurately predicts maize grain yield weeks before harvest. By combining high-resolution UAV drone imagery at 3 key life-cycle stages with deep learning and tabular gradient boosting, we solve one of precision agriculture's hardest challenges: generalizing across unseen geographic fields.",
+      "Slide 2 outlines the motivation behind MaizeSight. Maize is crucial for global nutrition and energy. However, farmers and agronomists have historically been constrained: manual testing is destructive and slow, satellites suffer from coarse resolution and clouds, and combine harvesters only tell you the yield when the season is already over. Low-altitude drone flights solve this by providing centimeter-level imagery exactly when corrective actions can still be taken.",
+      "Slide 3 presents the central research problem. In precision agriculture, the real test of machine learning is out-of-domain transfer. When an algorithm trained in Nebraska is tested in Indiana, the baseline yield shifts drastically due to climate and soil differences. Off-the-shelf CNNs score negative R-squared. Solving this problem has massive economic consequences for farmers, breeders, and commodity supply chains.",
+      "Slide 4 defines our objectives and project boundaries. We set out to create an end-to-end multimodal pipeline that connects drone flights to combine-harvested yields. Rather than relying on a single monolithic model, we designed a dual-paradigm architecture: a Specialist model for monitored sites, and a Generalist model for brand-new fields. The scope encompasses 2,131 audited plots across Nebraska, Iowa, and Indiana.",
+      "Slide 5 introduces our data foundation. Sourced from Shrestha et al. on Dryad, the 2022 season covers 5 distinct environments: from severe drought in Lincoln, Nebraska (averaging 41 bu/ac) to prime alluvial river soil in Missouri Valley and Crawfordsville, Indiana (over 165 bu/ac). We combine two modalities: high-resolution RGB drone imagery across 3 flights and ground-truth combine harvest records standardized to 15.5% moisture.",
+      "Slide 6 details our data engineering. We enforce two critical techniques: first, replication padding prevents artificial zero-gradient borders from throwing off the CNN filters; second, strict plot-level splitting ensures that all three temporal flights for a given physical plot remain in the same partition. Our feature engineering creates four distinct spaces: deep latent embeddings, biophysical indices, growth rate deltas, and spatial/genetic priors.",
+      "Slide 7 shows key insights from our exploratory data analysis. The yield distribution showed extreme bimodality: Lincoln averaged only 41 bushels per acre due to drought, whereas Crawfordsville reached 165 bu/ac. This proved that a standard model cannot simply guess yields without knowing the field's baseline. We also observed how correlation changes over time: TP1 reflects stand count, TP2 reflects vegetative canopy, and TP3 tasseling shows the highest single-flight correlation to grain yield.",
+      "Slide 8 focuses specifically on Convolutional Neural Networks. Standard neural networks flatten an image and lose all row geometry. CNNs slide small weight kernels across the 2D image, learning hierarchical representations from simple leaf edges up to complex tassel clusters. In MaizeSight, we use EfficientNet-B0 as a feature extractor: we remove its classification head and output a 1,280-dimensional latent embedding for each patch, pooling them across plots to feed our downstream regressors.",
+      "Slide 9 explains our primary tabular engine: XGBoost. Neural networks often struggle with heterogeneous tabular data, but XGBoost excels at fusing continuous embeddings, discrete canopy indices, and categorical hybrid parentages. Its sequential boosting with second-order Taylor expansion and L1/L2 penalties prevents overfitting on noisy agricultural plots, and its tree splits naturally model non-linear biological 'if-then' rules.",
+      "Slide 10 details our architectural choices. Rather than relying on a single algorithm, we ensemble four distinct regressors: XGBoost, ExtraTrees for variance reduction, HistGradientBoosting for integer-binned decision trees, and Ridge regression for linear stability. In Model 1, three feature views are stacked together. In Model 2, we decouple field-level yield anchoring from within-field plot ranking.",
+      "Slide 11 presents our validation rigor. Random splitting is disastrous with multi-temporal data because images of the same plot at different dates would leak across splits. We lock all three flights into the same partition. Furthermore, we test Model 2 using Leave-One-Location-Out: we train on Nebraska and Iowa, and evaluate purely on Crawfordsville, Indiana, which the model has never seen before.",
+      "Slide 12 presents the ablation results for Model 1 across 323 held-out test plots. A raw single-flight CNN achieves an R-squared of 0.794. Adding multi-temporal dynamics boosts it to 0.809. Fusing canopy indices pushes it to 0.818, and incorporating spatial kriging and hybrid genetics drops RMSE by over 1.6 bushels per acre. Our final three-view ensemble reaches an R-squared of 0.8454 with an average error of only 16.5 bu/ac.",
+      "Slide 13 highlights our breakthrough in out-of-domain transfer learning. Naive transfer learning scored negative 1.62 at Crawfordsville, Indiana. Our decoupled Anchor-Ranker architecture broke through this barrier, achieving a positive R-squared of +0.140 in pure zero-shot mode. When just 15 reference plots were provided for calibration, R-squared reached +0.217 with an RMSE of 21.89 bu/ac.",
+      "Slide 14 provides a comprehensive benchmark comparison. We show why heavy backbones like ResNet-50 overfit on 2,000 plots compared to EfficientNet-B0; why zero padding corrupts edge features compared to replication padding; why single-flight sensing hits an R-squared ceiling of 0.794; and why monolithic transfer fails catastrophically compared to our decoupled Anchor-Ranker approach.",
+      "Slide 15 showcases our production software implementation. We built a full-stack platform called MaizeSight. The FastAPI backend runs dual-model inference in milliseconds, while the frontend provides an interactive Three.js 3D map, automated file matching that links drone flight PNGs by plot ID, and diagnostic flags that protect agronomists from corrupt or missing image inputs.",
+      "Slide 16 concludes our core findings. Multi-temporal sensing is non-negotiable; hybrid feature fusion beats pure pixel deep learning; decoupling field anchors from within-field rankers solves the cross-site transfer barrier; and measuring just 15 reference plots makes few-shot adaptation practical in real-world agriculture.",
+      "Slide 17 looks forward. We outline four high-impact directions: fusing multispectral and thermal sensors for water stress detection; combining satellite and drone data for county-wide coverage; implementing spatio-temporal Transformers; and quantizing our models for live edge inference on NVIDIA Jetson computers mounted directly on drones.",
+      "Slide 18 provides formal citations for our work, recognizing Shrestha et al.'s open dataset on Dryad, classical remote sensing index papers by Woebbecke and Gitelson, and fundamental machine learning architectures including EfficientNet and XGBoost.",
+      "Thank you everyone for your attention. We would like to acknowledge our project advisors, the authors of the open Dryad dataset, and the open-source software libraries that made this system possible. We are now open for any questions!"
+    ];
+
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const slideIndexEl = document.getElementById('slideIndex');
+    const notesDrawer = document.getElementById('notesDrawer');
+    const notesSlideNum = document.getElementById('notesSlideNumber');
+    const notesContent = document.getElementById('notesContent');
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= totalSlides) index = totalSlides - 1;
+      
+      slides[currentSlide].classList.remove('active');
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+      
+      slideIndexEl.textContent = `Slide ${currentSlide + 1} / ${totalSlides}`;
+      notesSlideNum.textContent = `Slide ${currentSlide + 1}`;
+      notesContent.textContent = speakerNotes[currentSlide] || "No speaker notes recorded for this slide.";
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => showSlide(currentSlide - 1));
+    document.getElementById('nextBtn').addEventListener('click', () => showSlide(currentSlide + 1));
+
+    document.getElementById('toggleNotesBtn').addEventListener('click', () => {
+      notesDrawer.classList.toggle('visible');
+    });
+
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Keyboard Navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        showSlide(currentSlide + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        showSlide(currentSlide - 1);
+      } else if (e.key === 'Home') {
+        showSlide(0);
+      } else if (e.key === 'End') {
+        showSlide(totalSlides - 1);
+      } else if (e.key === 'n' || e.key === 'N') {
+        notesDrawer.classList.toggle('visible');
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    // Initialize first slide notes
+    showSlide(0);
+  </script>
+</body>
+</html>

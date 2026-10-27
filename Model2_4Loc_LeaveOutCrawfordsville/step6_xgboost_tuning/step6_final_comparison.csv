@@ -1,0 +1,5 @@
+Model_Stage,Val_RMSE,Val_R2,ZeroShot_Test_RMSE,ZeroShot_Test_MAE,ZeroShot_Test_R2,ZeroShot_Full4Loc_RMSE,ZeroShot_Full4Loc_R2,Test_Pearson_r,Test_Full4Loc_r,Calibrated_RMSE,Calibrated_MAE,Calibrated_R2
+1. Step 5 Untuned Baseline (Unshrunk Single XGB),22.5808,0.8367,28.1878,22.5125,-0.3047,27.5305,-0.2446,0.4241,0.4406,22.7776,17.9691,0.1522
+2. Step 6 Tuned Physical Baseline Model (157 Feats),23.5823,0.8219,24.1202,18.7888,0.0447,24.8272,-0.0121,0.318,0.2633,24.8024,19.1901,-0.0052
+3. Step 6 4-Family Ranker Ensemble + Anchor (Unshrunk),23.0521,0.8298,23.7671,18.7803,0.0725,23.8046,0.0695,0.4203,0.436,22.6901,18.0129,0.1587
+4. STEP 6 FINAL TUNED ENSEMBLE (LOLO-Calibrated),23.0521,0.8298,23.2095,18.2338,0.1155,23.356,0.1043,0.4212,0.4345,22.3786,17.7686,0.1816

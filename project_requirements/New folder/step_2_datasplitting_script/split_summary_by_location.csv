@@ -1,0 +1,7 @@
+location,train,validation,test,total
+Ames,389,98,0,487
+Crawfordsville,0,0,488,488
+Lincoln,403,101,0,504
+MOValley,130,33,0,163
+Scottsbluff,391,98,0,489
+TOTAL,1313,330,488,2131

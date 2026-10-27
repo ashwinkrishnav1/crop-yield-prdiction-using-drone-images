@@ -1,0 +1,5 @@
+Pipeline_Stage,Num_Features,Val_RMSE,Val_MAE,Val_R2,Test_RMSE,Test_MAE,Test_R2,Test_Pearson_r
+1. Raw TP3 CNN Only (1280 dims),1280,23.7358,17.8095,0.8195,29.6455,24.0683,-0.4431,0.285
+2. TP1+TP2+TP3 CNN + Growth Deltas (PCA),156,24.0834,17.912,0.8142,34.8391,28.3492,-0.9931,0.2329
+3. RGB Canopy Indices + Agronomic Metadata,88,23.7355,17.9681,0.8195,39.3978,32.7535,-1.5488,-0.05
+4. FULL STEP 4 (Multi-TP CNN + Deltas + RGB + Metadata),244,23.7006,17.5706,0.8201,31.2855,25.3098,-0.6072,0.2561

@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaizeSight • Interactive Masterclass: How a CNN Turns an Image into Numbers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #05120d;
+      --bg-card: #0c231a;
+      --bg-card-alt: #102e23;
+      --border: #184333;
+      --border-bright: #27684f;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --gold: #f59e0b;
+      --gold-glow: rgba(245, 158, 11, 0.25);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.25);
+      --coral: #f43f5e;
+      --text-white: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --radius-lg: 14px;
+      --radius-md: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      line-height: 1.6;
+      padding: 0 0 80px 0;
+      overflow-x: hidden;
+    }
+
+    /* TOP STICKY HEADER & PROGRESS */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(5, 18, 13, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -0.5px;
+    }
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--emerald), var(--gold));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: #05120d;
+      font-weight: 900;
+    }
+
+    .nav-steps {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      max-width: 720px;
+      padding: 4px;
+    }
+
+    .nav-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-tab:hover {
+      background: var(--bg-card);
+      color: var(--text-white);
+    }
+    .nav-tab.active {
+      background: var(--bg-card);
+      border-color: var(--emerald);
+      color: #fff;
+      box-shadow: 0 0 10px var(--emerald-glow);
+    }
+    .tab-num {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+    }
+
+    /* CONTAINER */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 50px 20px 40px 20px;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--emerald);
+      color: var(--emerald);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .hero h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, #ffffff 40%, var(--gold) 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 24px auto;
+    }
+
+    /* MODULE SECTION WRAPPERS */
+    .module-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 36px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+      transition: border-color 0.3s;
+      position: relative;
+    }
+    .module-section:hover {
+      border-color: var(--border-bright);
+    }
+
+    .module-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .module-title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .step-pill {
+      background: var(--emerald);
+      color: #04140c;
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .module-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .module-tagline {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-top: 2px;
+    }
+
+    /* CONCEPT CALLOUT BOX */
+    .concept-card {
+      background: #081a13;
+      border-left: 4px solid var(--gold);
+      padding: 14px 18px;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      font-size: 0.95rem;
+      margin-bottom: 22px;
+    }
+    .concept-card strong { color: var(--gold); }
+
+    /* STEP 1: PIXEL INSPECTOR */
+    .pixel-inspector-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+    @media (max-width: 850px) {
+      .pixel-inspector-layout { grid-template-columns: 1fr; }
+    }
+
+    .mock-drone-image {
+      background: #04100b;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .image-matrix-canvas {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 3px;
+      margin: 10px auto;
+      max-width: 380px;
+    }
+    .img-pixel {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      user-select: none;
+    }
+    .img-pixel:hover {
+      transform: scale(1.15);
+      z-index: 5;
+      box-shadow: 0 0 10px #fff;
+    }
+    .img-pixel.active-selected {
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 12px var(--gold-glow);
+      transform: scale(1.1);
+      z-index: 6;
+    }
+
+    .pixel-data-card {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+    }
+    .pixel-data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #163f30;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+    }
+
+    /* STEP 2: CONVOLUTION PLAYGROUND */
+    .conv-playground {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 22px;
+    }
+    @media (max-width: 900px) {
+      .conv-playground { grid-template-columns: 1fr; }
+    }
+
+    .filter-selector-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      background: #081e16;
+      border: 1px solid var(--border);
+      color: var(--text-white);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-chip.active {
+      background: var(--gold);
+      color: #04140c;
+      border-color: var(--gold);
+      box-shadow: 0 0 10px var(--gold-glow);
+    }
+
+    .live-calc-board {
+      background: #061610;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .calc-sum-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    /* STEP 3: ACTIVATION SLIDER */
+    .activation-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+    @media (max-width: 800px) {
+      .activation-demo { grid-template-columns: 1fr; }
+    }
+    .slider-box {
+      background: #071913;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .custom-range {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #184333;
+      outline: none;
+      -webkit-appearance: none;
+      margin: 14px 0;
+    }
+    .custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--emerald);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--emerald-glow);
+    }
+
+    /* STEP 4: POOLING VISUALIZER */
+    .pooling-grid-demo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .quad-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 46px);
+      grid-template-rows: repeat(4, 46px);
+      gap: 4px;
+      background: #04100b;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .quad-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 4px;
+      color: #fff;
+    }
+    .block-tl { background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; }
+    .block-tr { background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; }
+    .block-bl { background: rgba(245, 158, 11, 0.25); border: 1px solid #f59e0b; }
+    .block-br { background: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899; }
+
+    .quad-reduced {
+      display: grid;
+      grid-template-columns: repeat(2, 60px);
+      grid-template-rows: repeat(2, 60px);
+      gap: 6px;
+      background: #04100b;
+      padding: 8px;
+      border-radius: 8px;
+      border: 2px dashed var(--gold);
+    }
+    .reduced-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 800;
+      border-radius: 6px;
+      color: #fff;
+    }
+
+    /* STEP 5: PYRAMID STACKING */
+    .pyramid-view {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .pyramid-layer {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.25s;
+    }
+    .pyramid-layer:hover {
+      border-color: var(--emerald);
+      transform: translateX(4px);
+    }
+    .layer-dims {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--cyan);
+    }
+
+    /* STEP 6 & 7: REGRESSION SCORECARD */
+    .scorecard-workspace {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .scorecard-workspace { grid-template-columns: 1fr; }
+    }
+
+    .trait-slider-group {
+      background: #071913;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .trait-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .trait-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .trait-weight-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .yield-display-card {
+      background: linear-gradient(135deg, #09281c, #164934);
+      border: 2px solid var(--gold);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 0 30px var(--gold-glow);
+    }
+    .yield-big-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--gold);
+      margin: 10px 0;
+      letter-spacing: -1px;
+    }
+    .yield-verdict {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* BOTTOM SUMMARY CARD */
+    .summary-card {
+      background: linear-gradient(135deg, #0d3829, #1b5e3f);
+      border: 1px solid var(--emerald);
+      border-radius: var(--radius-lg);
+      padding: 24px 30px;
+      margin-top: 40px;
+      text-align: center;
+    }
+    .summary-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .summary-card p {
+      color: #d1fae5;
+      font-size: 1rem;
+      max-width: 820px;
+      margin: 0 auto 16px auto;
+    }
+
+    /* BUTTONS */
+    .btn-action {
+      background: var(--emerald);
+      color: #04140c;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-action:hover {
+      background: #34d399;
+      transform: translateY(-2px);
+      box-shadow: 0 0 15px var(--emerald-glow);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- STICKY TOP BAR -->
+  <div class="top-bar">
+    <div class="brand">
+      <div class="brand-icon">M</div>
+      <span>MaizeSight CNN Masterclass</span>
+    </div>
+
+    <div class="nav-steps">
+      <button class="nav-tab active" onclick="scrollToSection('sec-step1')"><span class="tab-num">1</span> Pixels (0-1)</button>
+      <button class="nav-tab" onclick="scrollToSection('sec-step2')"><span class="tab-num">2</span> 3×3 Filters</button>
+      <button class="nav-tab" onclick="scrollToSection('sec-step3')"><span class="tab-num">3</span> Activation</button>
+      <button class="nav-tab" onclick="scrollToSection('sec-step4')"><span class="tab-num">4</span> Pooling</button>
+      <button class="nav-tab" onclick="scrollToSection('sec-step5')"><span class="tab-num">5</span> Deep Layers</button>
+      <button class="nav-tab" onclick="scrollToSection('sec-step6')"><span class="tab-num">6</span> 1,280 Clues</button>
+      <button class="nav-tab" onclick="scrollToSection('sec-step7')"><span class="tab-num">7</span> Final Yield</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+      <div class="hero-badge">Interactive Technical Guide</div>
+      <h1>From Drone Pixels to Crop Yield</h1>
+      <p>Follow the step-by-step journey of how a Convolutional Neural Network transforms digital camera pixels into a single harvest yield prediction (bu/ac).</p>
+    </section>
+
+    <!-- STEP 1: PIXEL MATRIX & NORMALIZATION -->
+    <section class="module-section" id="sec-step1">
+      <div class="module-header">
+        <div class="module-title-area">
+          <span class="step-pill">Step 1</span>
+          <div>
+            <h2 class="module-title">The Image as Numbers: Decimals Between 0.0 and 1.0</h2>
+            <div class="module-tagline">Why the computer divides RGB (0–255) by 255 and standardizes them</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="filter-chip active" id="btn-mode-dec" onclick="setPixelDisplayMode('decimal')">Normalized Decimals (0.0 to 1.0)</button>
+          <button class="filter-chip" id="btn-mode-rgb" onclick="setPixelDisplayMode('rgb')">Raw RGB (0 to 255)</button>
+        </div>
+      </div>
+
+      <div class="concept-card">
+        <strong>The Core Rule:</strong> A computer cannot see corn leaves or soil. It only sees a grid of numbers. If we leave numbers between 0 and 255, the math numbers become too huge and cause math overflow. Dividing by <strong>255.0</strong> scales everything between <strong>0.0 (pitch dark)</strong> and <strong>1.0 (brightest color)</strong>.
+      </div>
+
+      <div class="pixel-inspector-layout">
+        <!-- Interactive 8x8 Tile -->
+        <div class="mock-drone-image">
+          <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 4px;">Drone Corn Plot Tile (Hover or Click any Pixel)</div>
+          <div class="image-matrix-canvas" id="canvas8x8">
+            <!-- 64 pixels injected by JS -->
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-dim);">
+            Top Rows: Lush Green Corn Leaves (High Green) | Bottom Rows: Dark Soil (Low Values)
+          </div>
+        </div>
+
+        <!-- Live Inspector Card -->
+        <div class="pixel-data-card">
+          <h4 style="color: var(--emerald); margin-bottom: 12px; font-size: 1.05rem;">Live Pixel Inspector</h4>
+          <div class="pixel-data-row">
+            <span>Pixel Position (X, Y):</span>
+            <strong id="insp-pos">Row 2, Column 3</strong>
+          </div>
+          <div class="pixel-data-row">
+            <span>Biological Feature:</span>
+            <strong id="insp-type" style="color: #4ade80;">Healthy Corn Leaf</strong>
+          </div>
+          <div class="pixel-data-row">
+            <span>Raw Digital Number (0-255):</span>
+            <span id="insp-raw">R: 35, G: 215, B: 52</span>
+          </div>
+          <div class="pixel-data-row">
+            <span>Normalized Value (Divided by 255):</span>
+            <strong id="insp-norm" style="color: var(--gold);">0.84</strong>
+          </div>
+          <div class="pixel-data-row">
+            <span>Standardized Model Input (x - μ)/σ:</span>
+            <strong id="insp-std" style="color: var(--cyan);">+1.68</strong>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 10px;">
+            Notice how healthy leaves produce positive normalized numbers close to 1.0, while dark soil pixels produce numbers close to 0.1.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2: CONVOLUTION (3x3 FILTERS) -->
+    <section class="module-section" id="sec-step2">
+      <div class="module-header">
+        <div class="module-title-area">
+          <span class="step-pill">Step 2</span>
+          <div>
+            <h2 class="module-title">The Convolution: Sliding Pattern Detectors (3×3 Filters)</h2>
+            <div class="module-tagline">How the computer multiplies small patches of pixels by pattern weights and sums them up</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-card">
+        <strong>The Core Rule:</strong> The CNN takes a small $3 \times 3$ grid of numbers called a <strong>Filter</strong> (or Kernel). It slides this filter over every $3 \times 3$ window of pixels, multiplies matching pairs, and adds them up. If the pattern matches, the sum is a <strong>big positive number</strong>!
+      </div>
+
+      <!-- Filter Selection Chips -->
+      <div class="filter-selector-bar">
+        <span style="font-size: 0.85rem; font-weight: 700; align-self: center; color: var(--text-muted);">Choose What the CNN is Looking For:</span>
+        <button class="filter-chip active" id="f-chip-edge" onclick="selectFilter('edge')">1. Horizontal Leaf Edge Detector</button>
+        <button class="filter-chip" id="f-chip-row" onclick="selectFilter('row')">2. Vertical Crop Row Detector</button>
+        <button class="filter-chip" id="f-chip-green" onclick="selectFilter('green')">3. High Greenness / Foliage Filter</button>
+      </div>
+
+      <div class="conv-playground">
+        <!-- Visual Grids & Sliders -->
+        <div>
+          <div style="display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap;">
+            <!-- 3x3 Image Patch -->
+            <div style="text-align: center;">
+              <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">Image Patch (3×3)</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 48px); gap: 3px;" id="convPatchGrid">
+                <!-- 9 patch cells -->
+              </div>
+            </div>
+
+            <div style="font-size: 1.4rem; font-weight: 800; color: var(--gold);">×</div>
+
+            <!-- 3x3 Filter Weights -->
+            <div style="text-align: center;">
+              <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">Filter Weights (3×3)</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 48px); gap: 3px;" id="convFilterGrid">
+                <!-- 9 filter cells -->
+              </div>
+            </div>
+
+            <div style="font-size: 1.4rem; font-weight: 800; color: var(--emerald);">=</div>
+
+            <!-- Result Score -->
+            <div style="text-align: center;">
+              <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">Resulting Score</div>
+              <div style="width: 70px; height: 70px; border-radius: 8px; background: #081e16; border: 2px solid var(--emerald); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 800; color: #34d399;" id="convResultDisplay">
+                +2.28
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; background: #081a13; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border);">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Test different patch scenarios:</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-action" style="padding: 6px 12px; font-size: 0.8rem;" onclick="setPatchPreset('edge')">Leaf Boundary</button>
+              <button class="btn-action" style="padding: 6px 12px; font-size: 0.8rem; background: #0284c7;" onclick="setPatchPreset('solid')">Solid Leaf</button>
+              <button class="btn-action" style="padding: 6px 12px; font-size: 0.8rem; background: #78350f;" onclick="setPatchPreset('soil')">Bare Soil</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Math Board -->
+        <div class="live-calc-board">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--gold); margin-bottom: 8px;">Live Arithmetic (Dot Product Calculation):</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.7;" id="mathFormulaBreakdown">
+            Top Row: (0.90 × +1) + (0.85 × +1) + (0.92 × +1) = +2.67<br>
+            Mid Row: (0.75 × 0) + (0.70 × 0) + (0.72 × 0) = 0.00<br>
+            Bot Row: (0.12 × -1) + (0.14 × -1) + (0.13 × -1) = -0.39
+          </div>
+          <div class="calc-sum-row">
+            <span>Total Sum Score:</span>
+            <span style="color: var(--emerald);" id="mathTotalScore">+2.28</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px;" id="mathInterpretation">
+            💡 <strong>Interpretation:</strong> The top pixels were bright green (+2.67) and bottom were dark soil (-0.39). The high positive sum tells the CNN: <em>"A clear plant border is present!"</em>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3: ACTIVATION (RELU & SWISH) -->
+    <section class="module-section" id="sec-step3">
+      <div class="module-header">
+        <div class="module-title-area">
+          <span class="step-pill">Step 3</span>
+          <div>
+            <h2 class="module-title">The Activation Gate: Filtering Out Noise (ReLU / Swish)</h2>
+            <div class="module-tagline">Why negative numbers turn into zero to keep only meaningful biological signals</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-card">
+        <strong>The Core Rule:</strong> Real nature is non-linear. If a patch has bare dirt or confusing shadows, the convolution result might be negative (e.g. $-1.8$). We don't want negative leaves! The <strong>ReLU function</strong> ($\max(0, x)$) and <strong>Swish function</strong> ($x \cdot \sigma(x)$) automatically wipe negative noise to $0$, passing only strong positive signals forward.
+      </div>
+
+      <div class="activation-demo">
+        <div class="slider-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; font-size: 0.95rem;">Convolution Raw Sum (x):</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 800; color: var(--gold);" id="actRawVal">+2.20</span>
+          </div>
+          <input type="range" class="custom-range" id="actSlider" min="-5.0" max="5.0" step="0.1" value="2.2" oninput="updateActivationDemo(this.value)">
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim);">
+            <span>-5.0 (Strong Negative / Dirt Noise)</span>
+            <span>0.0 (Neutral)</span>
+            <span>+5.0 (Strong Positive / Plant)</span>
+          </div>
+        </div>
+
+        <div class="pixel-data-card">
+          <h4 style="color: var(--emerald); font-size: 1rem; margin-bottom: 10px;">Activation Output (Passed to Next Layer):</h4>
+          <div class="pixel-data-row">
+            <span>Raw Input (x):</span>
+            <strong id="actInpText">+2.20</strong>
+          </div>
+          <div class="pixel-data-row">
+            <span>ReLU Output max(0, x):</span>
+            <strong id="actReluText" style="color: var(--emerald);">+2.20</strong>
+          </div>
+          <div class="pixel-data-row">
+            <span>Swish Output (EfficientNet-B0):</span>
+            <strong id="actSwishText" style="color: var(--cyan);">+1.98</strong>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;" id="actVerdictText">
+            ✅ The signal is positive! The neuron fires and transmits this leaf pattern to the next layer.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: POOLING & DOWNSAMPLING -->
+    <section class="module-section" id="sec-step4">
+      <div class="module-header">
+        <div class="module-title-area">
+          <span class="step-pill">Step 4</span>
+          <div>
+            <h2 class="module-title">Downsampling & Pooling: Shrinking Space to Gain Perspective</h2>
+            <div class="module-tagline">How the computer reduces a 4×4 grid of details into a 2×2 grid of summary concepts</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-card">
+        <strong>The Core Rule:</strong> You don't need to track every millimeter of leaf vein to know if a corn field is healthy. <strong>Max Pooling</strong> looks at a $2 \times 2$ block of 4 numbers and keeps only the highest number. This cuts the size in half while keeping the most critical clues.
+      </div>
+
+      <div class="pooling-grid-demo">
+        <!-- 4x4 Grid -->
+        <div style="text-align: center;">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Detailed Feature Map (4×4 Grid = 16 pixels)</div>
+          <div class="quad-grid">
+            <div class="quad-cell block-tl">1.2</div>
+            <div class="quad-cell block-tl">2.4</div>
+            <div class="quad-cell block-tr">0.1</div>
+            <div class="quad-cell block-tr">0.8</div>
+
+            <div class="quad-cell block-tl">0.5</div>
+            <div class="quad-cell block-tl">1.8</div>
+            <div class="quad-cell block-tr">0.4</div>
+            <div class="quad-cell block-tr">1.9</div>
+
+            <div class="quad-cell block-bl">0.2</div>
+            <div class="quad-cell block-bl">0.1</div>
+            <div class="quad-cell block-br">2.8</div>
+            <div class="quad-cell block-br">3.1</div>
+
+            <div class="quad-cell block-bl">0.0</div>
+            <div class="quad-cell block-bl">0.3</div>
+            <div class="quad-cell block-br">2.5</div>
+            <div class="quad-cell block-br">2.9</div>
+          </div>
+        </div>
+
+        <div style="font-size: 2rem; color: var(--gold);">➔</div>
+
+        <!-- 2x2 Reduced Grid -->
+        <div style="text-align: center;">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--gold); margin-bottom: 8px;">Max Pooled Summary (2×2 Grid = 4 values)</div>
+          <div class="quad-reduced">
+            <div class="reduced-cell block-tl">2.4<span style="font-size:0.6rem;opacity:0.8;">MAX</span></div>
+            <div class="reduced-cell block-tr">1.9<span style="font-size:0.6rem;opacity:0.8;">MAX</span></div>
+            <div class="reduced-cell block-bl">0.3<span style="font-size:0.6rem;opacity:0.8;">MAX</span></div>
+            <div class="reduced-cell block-br">3.1<span style="font-size:0.6rem;opacity:0.8;">MAX</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+        Notice how the $4 \times 4$ grid shrank by 75% in memory, yet the key signals ($2.4, 1.9, 0.3, 3.1$) were 100% preserved!
+      </div>
+    </section>
+
+    <!-- STEP 5: DEEP HIERARCHICAL PYRAMID -->
+    <section class="module-section" id="sec-step5">
+      <div class="module-header">
+        <div class="module-title-area">
+          <span class="step-pill">Step 5</span>
+          <div>
+            <h2 class="module-title">The Deep Pyramid: From Edges to Full Corn Plants</h2>
+            <div class="module-tagline">How EfficientNet-B0 stacks 16 layers, shrinking 2D space while expanding conceptual depth</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-card">
+        <strong>The Core Rule:</strong> Early layers see simple visual edges. As the data flows deeper into the network, spatial dimensions shrink from $224 \times 224$ down to $7 \times 7$, but the number of channels grows from $3$ up to $1,280$. The CNN assembles simple lines into leaves, leaves into crop rows, and crop rows into flowering tassels.
+      </div>
+
+      <div class="pyramid-view">
+        <div class="pyramid-layer">
+          <div>
+            <strong style="color: #fff;">Input Layer:</strong> Raw Drone Orthomosaic Patch
+          </div>
+          <div class="layer-dims">224 × 224 × 3 (RGB Channels)</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Raw color numbers</div>
+        </div>
+
+        <div class="pyramid-layer">
+          <div>
+            <strong style="color: #60a5fa;">Stage 1–2 (Early Layers):</strong> Basic Edges & Soil Contrast
+          </div>
+          <div class="layer-dims">112 × 112 × 32 channels</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Detects leaf contours & row lines</div>
+        </div>
+
+        <div class="pyramid-layer">
+          <div>
+            <strong style="color: #34d399;">Stage 3–4 (Middle Layers):</strong> Foliage Textures & Canopy Density
+          </div>
+          <div class="layer-dims">56 × 56 × 64 channels</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Identifies canopy gaps and overlapping leaf foliage</div>
+        </div>
+
+        <div class="pyramid-layer">
+          <div>
+            <strong style="color: var(--gold);">Stage 5–6 (Deep Layers):</strong> Biological Organs & Tassels
+          </div>
+          <div class="layer-dims">14 × 14 × 192 channels</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Recognizes flowering tassels, anthesis timing & ear formation</div>
+        </div>
+
+        <div class="pyramid-layer" style="border-color: var(--emerald);">
+          <div>
+            <strong style="color: var(--emerald);">Final Feature Tensor:</strong> Complete Agronomic Blueprint
+          </div>
+          <div class="layer-dims">7 × 7 × 1,280 channels</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Compact summary of 1,280 biological traits</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 6: GLOBAL AVERAGE POOLING (1280 CLUES) -->
+    <section class="module-section" id="sec-step6">
+      <div class="module-header">
+        <div class="module-title-area">
+          <span class="step-pill">Step 6</span>
+          <div>
+            <h2 class="module-title">Global Average Pooling: Collapsing 2D Space into 1,280 Numbers</h2>
+            <div class="module-tagline">How the 7×7 grid is averaged out, leaving a pure 1D list of visual clues</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-card">
+        <strong>The Core Rule:</strong> We no longer care <em>where</em> inside the patch a corn plant is located (left or right); we only care <em>how much</em> total healthy corn exists. Global Average Pooling averages all 49 numbers in each $7 \times 7$ feature slice, turning $(7 \times 7 \times 1,280)$ into a flat 1D vector of exactly <strong>1,280 numbers</strong>.
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; background: #071a13; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="text-align: center;">
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">One Feature Slice (7×7 Grid = 49 cells)</div>
+          <div style="width: 100px; height: 100px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--emerald); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: #34d399;">
+            49 values
+          </div>
+        </div>
+
+        <div style="font-size: 2rem; color: var(--gold);">➔ (Average) ➔</div>
+
+        <div style="text-align: center;">
+          <div style="font-size: 0.8rem; color: var(--gold); margin-bottom: 4px;">1 Single Trait Score</div>
+          <div style="width: 80px; height: 80px; border-radius: 6px; background: rgba(245, 158, 11, 0.2); border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 800; color: var(--gold);">
+            +1.42
+          </div>
+        </div>
+
+        <div style="font-size: 2rem; color: var(--cyan);">× 1,280 times ➔</div>
+
+        <div style="text-align: center;">
+          <div style="font-size: 0.8rem; color: var(--cyan); margin-bottom: 4px;">Final 1D Feature Vector</div>
+          <div style="padding: 10px 18px; border-radius: 6px; background: #081e28; border: 1px solid var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #38bdf8;">
+            [x₁, x₂, x₃, ..., x₁₂₈₀]
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 7: REGRESSION SCORECARD (FINAL NUMBER) -->
+    <section class="module-section" id="sec-step7">
+      <div class="module-header">
+        <div class="module-title-area">
+          <span class="step-pill">Step 7</span>
+          <div>
+            <h2 class="module-title">The Scorecard: Turning 1,280 Clues into Final Harvest Yield</h2>
+            <div class="module-tagline">How learned weights multiply each clue to output one continuous harvest number (bu/ac)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-card">
+        <strong>The Core Rule:</strong> The final Linear Regression layer multiplies each of the $1,280$ visual clues by its own learned weight $w_i$. High greenness and full flowering tassels add bonus yield (+), while yellow dying leaves and bare ground subtract penalties (−). Everything adds up to the final crop yield!
+      </div>
+
+      <div class="scorecard-workspace">
+        <!-- Interactive Trait Sliders -->
+        <div class="trait-slider-group">
+          <h4 style="color: var(--emerald); font-size: 1rem;">Adjust Observed Field Traits:</h4>
+
+          <!-- Trait 1: Green Foliage -->
+          <div class="trait-item">
+            <div class="trait-header">
+              <span>🌿 Dense Green Canopy Cover (Trait x₄₂)</span>
+              <span class="trait-weight-badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">Multiplier: +22.5 bu/ac</span>
+            </div>
+            <input type="range" class="custom-range" id="t-slider-1" min="0.0" max="1.5" step="0.05" value="1.1" oninput="calculateInteractiveYield()">
+          </div>
+
+          <!-- Trait 2: Flowering Tassels -->
+          <div class="trait-item">
+            <div class="trait-header">
+              <span>🌾 Flowering Anthesis & Silking (Trait x₁₀₈)</span>
+              <span class="trait-weight-badge" style="background: rgba(245, 158, 11, 0.2); color: #facc15;">Multiplier: +18.0 bu/ac</span>
+            </div>
+            <input type="range" class="custom-range" id="t-slider-2" min="0.0" max="1.5" step="0.05" value="1.0" oninput="calculateInteractiveYield()">
+          </div>
+
+          <!-- Trait 3: Drought Chlorosis / Yellowing -->
+          <div class="trait-item">
+            <div class="trait-header">
+              <span>🍂 Yellowing Leaves & Heat Stress (Trait x₇₃)</span>
+              <span class="trait-weight-badge" style="background: rgba(244, 63, 94, 0.2); color: #fb7185;">Multiplier: -32.0 bu/ac</span>
+            </div>
+            <input type="range" class="custom-range" id="t-slider-3" min="0.0" max="1.5" step="0.05" value="0.2" oninput="calculateInteractiveYield()">
+          </div>
+
+          <!-- Trait 4: Bare Soil Gaps -->
+          <div class="trait-item">
+            <div class="trait-header">
+              <span>🟤 Bare Soil Gaps / Missing Plants (Trait x₉₁)</span>
+              <span class="trait-weight-badge" style="background: rgba(244, 63, 94, 0.2); color: #fb7185;">Multiplier: -26.0 bu/ac</span>
+            </div>
+            <input type="range" class="custom-range" id="t-slider-4" min="0.0" max="1.5" step="0.05" value="0.1" oninput="calculateInteractiveYield()">
+          </div>
+        </div>
+
+        <!-- Real-Time Harvest Predictor Display -->
+        <div class="yield-display-card">
+          <span style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">
+            Final Predicted Corn Yield
+          </span>
+          <div class="yield-big-number" id="finalYieldNumber">164.8</div>
+          <div style="font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 12px;">Bushels Per Acre (bu/ac)</div>
+          <div class="yield-verdict" id="yieldVerdictBadge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid var(--emerald);">
+            Bumper Harvest Potential
+          </div>
+          <div style="font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); margin-top: 14px;" id="yieldFormulaSummary">
+            Base 120.0 + (1.1×22.5) + (1.0×18.0) - (0.2×32.0) - (0.1×26.0)
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL SUMMARY CARD -->
+    <div class="summary-card">
+      <h3>The Complete Journey in One Sentence</h3>
+      <p>A CNN divides raw image pixels by 255 to create decimals between 0 and 1, slides 3×3 pattern filters to find leaf edges and row structures, filters out negative noise with ReLU, shrinks the spatial resolution via pooling, and aggregates 1,280 biological traits to calculate the final harvest yield.</p>
+      <button class="btn-action" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        ↑ Back to Top of Guide
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // ----------------------------------------------------------------
+    // STEP 1 DATA & LOGIC: PIXEL INSPECTOR
+    // ----------------------------------------------------------------
+    let pixelMode = 'decimal'; // 'decimal' or 'rgb'
+    const matrix8x8 = [
+      [0.91, 0.88, 0.94, 0.90, 0.85, 0.89, 0.93, 0.87],
+      [0.86, 0.92, 0.89, 0.93, 0.88, 0.85, 0.90, 0.89],
+      [0.84, 0.87, 0.91, 0.88, 0.82, 0.86, 0.88, 0.84],
+      [0.72, 0.68, 0.75, 0.70, 0.65, 0.62, 0.70, 0.67], // Edge
+      [0.22, 0.18, 0.25, 0.20, 0.16, 0.19, 0.21, 0.18], // Soil starts
+      [0.15, 0.12, 0.17, 0.14, 0.11, 0.15, 0.14, 0.12],
+      [0.10, 0.08, 0.12, 0.09, 0.14, 0.11, 0.09, 0.10],
+      [0.12, 0.15, 0.09, 0.11, 0.08, 0.13, 0.10, 0.11]
+    ];
+
+    function renderCanvas8x8() {
+      const container = document.getElementById("canvas8x8");
+      container.innerHTML = "";
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const val = matrix8x8[r][c];
+          const cell = document.createElement("div");
+          cell.className = "img-pixel";
+          cell.id = `p-${r}-${c}`;
+
+          // Green vs Soil background color
+          if (val > 0.5) {
+            const greenInt = Math.floor(val * 160 + 30);
+            cell.style.background = `rgb(20, ${greenInt}, 45)`;
+          } else {
+            const brownInt = Math.floor(val * 120 + 20);
+            cell.style.background = `rgb(${brownInt + 30}, ${brownInt}, 15)`;
+          }
+
+          cell.textContent = pixelMode === 'decimal' ? val.toFixed(2) : Math.round(val * 255);
+
+          cell.addEventListener("mouseenter", () => inspectPixel(r, c));
+          cell.addEventListener("click", () => inspectPixel(r, c));
+
+          container.appendChild(cell);
+        }
+      }
+    }
+
+    function inspectPixel(r, c) {
+      document.querySelectorAll(".img-pixel").forEach(p => p.classList.remove("active-selected"));
+      const target = document.getElementById(`p-${r}-${c}`);
+      if (target) target.classList.add("active-selected");
+
+      const val = matrix8x8[r][c];
+      document.getElementById("insp-pos").textContent = `Row ${r + 1}, Col ${c + 1}`;
+
+      const isLeaf = val > 0.6;
+      const isEdge = val <= 0.6 && val >= 0.4;
+      const typeElem = document.getElementById("insp-type");
+
+      if (isLeaf) {
+        typeElem.textContent = "Healthy Corn Leaf (High Chlorophyll)";
+        typeElem.style.color = "#4ade80";
+      } else if (isEdge) {
+        typeElem.textContent = "Leaf Boundary / Row Edge";
+        typeElem.style.color = "#facc15";
+      } else {
+        typeElem.textContent = "Dark Agricultural Soil";
+        typeElem.style.color = "#d97706";
+      }
+
+      const rawR = Math.round(val > 0.5 ? 30 : val * 200 + 40);
+      const rawG = Math.round(val * 255);
+      const rawB = Math.round(val > 0.5 ? 40 : 20);
+
+      document.getElementById("insp-raw").textContent = `R: ${rawR}, G: ${rawG}, B: ${rawB}`;
+      document.getElementById("insp-norm").textContent = val.toFixed(2);
+
+      // (x - mean) / std simulation
+      const standardized = ((val - 0.45) / 0.22).toFixed(2);
+      document.getElementById("insp-std").textContent = standardized > 0 ? `+${standardized}` : standardized;
+    }
+
+    function setPixelDisplayMode(mode) {
+      pixelMode = mode;
+      document.getElementById("btn-mode-dec").classList.toggle("active", mode === 'decimal');
+      document.getElementById("btn-mode-rgb").classList.toggle("active", mode === 'rgb');
+      renderCanvas8x8();
+    }
+
+    // ----------------------------------------------------------------
+    // STEP 2 DATA & LOGIC: CONVOLUTION FILTER
+    // ----------------------------------------------------------------
+    const filterPresets = {
+      edge: [
+        [+1, +1, +1],
+        [ 0,  0,  0],
+        [-1, -1, -1]
+      ],
+      row: [
+        [+1, 0, -1],
+        [+1, 0, -1],
+        [+1, 0, -1]
+      ],
+      green: [
+        [-0.5, +1.0, -0.5],
+        [+1.0, +2.0, +1.0],
+        [-0.5, +1.0, -0.5]
+      ]
+    };
+
+    let activeFilterKey = 'edge';
+    let activePatch = [
+      [0.90, 0.85, 0.92],
+      [0.75, 0.70, 0.72],
+      [0.12, 0.14, 0.13]
+    ];
+
+    function selectFilter(key) {
+      activeFilterKey = key;
+      document.getElementById("f-chip-edge").classList.toggle("active", key === 'edge');
+      document.getElementById("f-chip-row").classList.toggle("active", key === 'row');
+      document.getElementById("f-chip-green").classList.toggle("active", key === 'green');
+      renderConvSection();
+    }
+
+    function setPatchPreset(preset) {
+      if (preset === 'edge') {
+        activePatch = [
+          [0.90, 0.85, 0.92],
+          [0.75, 0.70, 0.72],
+          [0.12, 0.14, 0.13]
+        ];
+      } else if (preset === 'solid') {
+        activePatch = [
+          [0.88, 0.91, 0.89],
+          [0.90, 0.92, 0.91],
+          [0.87, 0.89, 0.90]
+        ];
+      } else if (preset === 'soil') {
+        activePatch = [
+          [0.14, 0.11, 0.15],
+          [0.12, 0.10, 0.13],
+          [0.15, 0.12, 0.14]
+        ];
+      }
+      renderConvSection();
+    }
+
+    function renderConvSection() {
+      const patchGrid = document.getElementById("convPatchGrid");
+      const filterGrid = document.getElementById("convFilterGrid");
+      patchGrid.innerHTML = "";
+      filterGrid.innerHTML = "";
+
+      const currFilter = filterPresets[activeFilterKey];
+      let total = 0;
+      let rowSummaries = ["", "", ""];
+
+      for (let r = 0; r < 3; r++) {
+        let rowSum = 0;
+        let rowStr = [];
+        for (let c = 0; c < 3; c++) {
+          const pVal = activePatch[r][c];
+          const fVal = currFilter[r][c];
+          const mult = pVal * fVal;
+          total += mult;
+          rowSum += mult;
+
+          rowStr.push(`(${pVal.toFixed(2)} × ${fVal > 0 ? '+' + fVal : fVal})`);
+
+          // Patch Cell
+          const pCell = document.createElement("div");
+          pCell.style.width = "48px";
+          pCell.style.height = "48px";
+          pCell.style.borderRadius = "4px";
+          pCell.style.display = "flex";
+          pCell.style.alignItems = "center";
+          pCell.style.justifyContent = "center";
+          pCell.style.fontFamily = "'JetBrains Mono', monospace";
+          pCell.style.fontSize = "0.75rem";
+          pCell.style.fontWeight = "700";
+          pCell.style.color = "#fff";
+          pCell.style.background = pVal > 0.5 ? "rgb(20, 140, 50)" : "rgb(80, 45, 20)";
+          pCell.textContent = pVal.toFixed(2);
+          patchGrid.appendChild(pCell);
+
+          // Filter Cell
+          const fCell = document.createElement("div");
+          fCell.style.width = "48px";
+          fCell.style.height = "48px";
+          fCell.style.borderRadius = "4px";
+          fCell.style.display = "flex";
+          fCell.style.alignItems = "center";
+          fCell.style.justifyContent = "center";
+          fCell.style.fontFamily = "'JetBrains Mono', monospace";
+          fCell.style.fontSize = "0.85rem";
+          fCell.style.fontWeight = "800";
+          fCell.style.background = fVal > 0 ? "rgba(52, 211, 153, 0.15)" : (fVal < 0 ? "rgba(248, 113, 113, 0.15)" : "#081a13");
+          fCell.style.color = fVal > 0 ? "#34d399" : (fVal < 0 ? "#f87171" : "#94a3b8");
+          fCell.style.border = "1px solid #1a4a38";
+          fCell.textContent = fVal > 0 ? `+${fVal}` : `${fVal}`;
+          filterGrid.appendChild(fCell);
+        }
+        rowSummaries[r] = `Row ${r + 1}: ${rowStr.join(" + ")} = ${rowSum > 0 ? '+' + rowSum.toFixed(2) : rowSum.toFixed(2)}`;
+      }
+
+      const totalRounded = total.toFixed(2);
+      const dispElem = document.getElementById("convResultDisplay");
+      dispElem.textContent = total > 0 ? `+${totalRounded}` : totalRounded;
+      dispElem.style.color = total > 1.0 ? "#34d399" : (total > 0 ? "#38bdf8" : "#f87171");
+
+      document.getElementById("mathFormulaBreakdown").innerHTML = rowSummaries.join("<br>");
+      document.getElementById("mathTotalScore").textContent = total > 0 ? `+${totalRounded}` : totalRounded;
+
+      const interp = document.getElementById("mathInterpretation");
+      if (total > 1.0) {
+        interp.innerHTML = `💡 <strong>Interpretation:</strong> Strong Positive Score (<strong>+${totalRounded}</strong>). The filter detected an exact match for the chosen pattern!`;
+      } else if (total >= 0) {
+        interp.innerHTML = `💡 <strong>Interpretation:</strong> Low Score (<strong>+${totalRounded}</strong>). Only weak ambient foliage detected; no sharp pattern match.`;
+      } else {
+        interp.innerHTML = `💡 <strong>Interpretation:</strong> Negative Score (<strong>${totalRounded}</strong>). Opposite or blank soil pattern detected. This will be clamped to 0 by the activation function.`;
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // STEP 3: ACTIVATION SLIDER
+    // ----------------------------------------------------------------
+    function updateActivationDemo(val) {
+      const v = parseFloat(val);
+      document.getElementById("actRawVal").textContent = v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2);
+      document.getElementById("actInpText").textContent = v > 0 ? `+${v.toFixed(2)}` : v.toFixed(2);
+
+      // ReLU: max(0, x)
+      const relu = Math.max(0, v);
+      document.getElementById("actReluText").textContent = relu > 0 ? `+${relu.toFixed(2)}` : "0.00";
+
+      // Swish: x * (1 / (1 + e^-x))
+      const sig = 1 / (1 + Math.exp(-v));
+      const swish = v * sig;
+      document.getElementById("actSwishText").textContent = swish > 0 ? `+${swish.toFixed(2)}` : swish.toFixed(2);
+
+      const verdict = document.getElementById("actVerdictText");
+      if (v > 0) {
+        verdict.innerHTML = `✅ <strong>Signal is Positive (+${v.toFixed(2)}):</strong> The neuron fires and transmits this meaningful plant pattern forward!`;
+        verdict.style.color = "#4ade80";
+      } else {
+        verdict.innerHTML = `❌ <strong>Signal is Negative (${v.toFixed(2)}):</strong> Wiped out to <strong>0.00</strong>! Suppresses unhelpful background noise.`;
+        verdict.style.color = "#fb7185";
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // STEP 7: SCORECARD YIELD CALCULATION
+    // ----------------------------------------------------------------
+    function calculateInteractiveYield() {
+      const x1 = parseFloat(document.getElementById("t-slider-1").value); // Greenness
+      const x2 = parseFloat(document.getElementById("t-slider-2").value); // Tassels
+      const x3 = parseFloat(document.getElementById("t-slider-3").value); // Yellow stress
+      const x4 = parseFloat(document.getElementById("t-slider-4").value); // Bare gaps
+
+      const base = 120.0;
+      const bonusGreen = x1 * 22.5;
+      const bonusTassel = x2 * 18.0;
+      const penYellow = x3 * 32.0;
+      const penGaps = x4 * 26.0;
+
+      const finalYield = base + bonusGreen + bonusTassel - penYellow - penGaps;
+      const yieldRounded = finalYield.toFixed(1);
+
+      document.getElementById("finalYieldNumber").textContent = yieldRounded;
+      document.getElementById("yieldFormulaSummary").textContent =
+        `Base 120.0 + (${x1.toFixed(2)}×22.5) + (${x2.toFixed(2)}×18.0) - (${x3.toFixed(2)}×32.0) - (${x4.toFixed(2)}×26.0)`;
+
+      const badge = document.getElementById("yieldVerdictBadge");
+      if (finalYield >= 165) {
+        badge.textContent = "High-Performance Bumper Yield";
+        badge.style.background = "rgba(16, 185, 129, 0.25)";
+        badge.style.color = "#34d399";
+        badge.style.borderColor = "#10b981";
+      } else if (finalYield >= 140) {
+        badge.textContent = "Normal Average Yield";
+        badge.style.background = "rgba(245, 158, 11, 0.25)";
+        badge.style.color = "#facc15";
+        badge.style.borderColor = "#f59e0b";
+      } else {
+        badge.textContent = "Severe Stress / Low Yield";
+        badge.style.background = "rgba(244, 63, 94, 0.25)";
+        badge.style.color = "#fb7185";
+        badge.style.borderColor = "#f43f5e";
+      }
+    }
+
+    // SMOOTH SCROLL HELPER
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        const offset = 70;
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = el.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+    }
+
+    // UPDATE ACTIVE TAB ON SCROLL
+    window.addEventListener("scroll", () => {
+      const sections = ['sec-step1', 'sec-step2', 'sec-step3', 'sec-step4', 'sec-step5', 'sec-step6', 'sec-step7'];
+      const tabs = document.querySelectorAll('.nav-tab');
+      let currentIdx = 0;
+
+      sections.forEach((sId, idx) => {
+        const sec = document.getElementById(sId);
+        if (sec) {
+          const rect = sec.getBoundingClientRect();
+          if (rect.top <= 120) {
+            currentIdx = idx;
+          }
+        }
+      });
+
+      tabs.forEach((tab, idx) => {
+        tab.classList.toggle('active', idx === currentIdx);
+      });
+    });
+
+    // INITIALIZATION
+    window.onload = function() {
+      renderCanvas8x8();
+      inspectPixel(2, 3);
+      renderConvSection();
+      updateActivationDemo(2.2);
+      calculateInteractiveYield();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaizeSight • How a CNN Works Step-by-Step (Interactive Visualizer)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #071510;
+      --bg-card: #0d271e;
+      --bg-card-hover: #133529;
+      --border: #1a4a39;
+      --border-glow: #22c55e;
+      --forest: #0b2019;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --gold: #f59e0b;
+      --gold-glow: rgba(245, 158, 11, 0.25);
+      --leaf-green: #22c55e;
+      --soil-brown: #78350f;
+      --soil-dark: #3f1d0b;
+      --text-white: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      line-height: 1.6;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* HEADER */
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--emerald);
+      border: 1px solid var(--emerald);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #f8fafc 40%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* STEP NAVIGATION */
+    .step-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .step-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-white);
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+    }
+
+    .step-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--emerald);
+      transform: translateY(-2px);
+    }
+
+    .step-btn.active {
+      background: linear-gradient(135deg, #0d3829, #1b5e3f);
+      border-color: var(--emerald);
+      color: #fff;
+      box-shadow: 0 0 15px var(--emerald-glow);
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      font-size: 0.75rem;
+    }
+
+    /* MAIN INTERACTIVE WORKSPACE */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title .tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+    }
+
+    /* GRID DISPLAY */
+    .grids-container {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .grid-wrapper {
+      text-align: center;
+    }
+
+    .grid-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    /* 6x6 IMAGE GRID */
+    .pixel-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 48px);
+      grid-template-rows: repeat(6, 48px);
+      gap: 3px;
+      padding: 8px;
+      background: #05100c;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .pixel-cell {
+      width: 48px;
+      height: 48px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+    }
+
+    .pixel-cell:hover {
+      transform: scale(1.1);
+      z-index: 5;
+      box-shadow: 0 0 10px rgba(255,255,255,0.4);
+    }
+
+    .pixel-cell .type-lbl {
+      font-size: 0.55rem;
+      opacity: 0.75;
+      text-transform: uppercase;
+    }
+
+    /* SLIDING 3x3 HIGHLIGHT BOX */
+    .kernel-window {
+      position: absolute;
+      width: calc(48px * 3 + 6px + 8px);
+      height: calc(48px * 3 + 6px + 8px);
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 20px var(--gold-glow), inset 0 0 15px rgba(245, 158, 11, 0.2);
+      border-radius: 6px;
+      pointer-events: none;
+      transition: top 0.25s ease, left 0.25s ease;
+      z-index: 10;
+    }
+
+    /* 3x3 FILTER GRID */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 46px);
+      grid-template-rows: repeat(3, 46px);
+      gap: 3px;
+      padding: 6px;
+      background: #12201b;
+      border-radius: 8px;
+      border: 2px dashed var(--gold);
+    }
+
+    .filter-cell {
+      width: 46px;
+      height: 46px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 800;
+      background: #081a13;
+      border: 1px solid #1e4536;
+    }
+
+    .filter-pos { color: #34d399; background: rgba(52, 211, 153, 0.12); }
+    .filter-zero { color: #94a3b8; }
+    .filter-neg { color: #f87171; background: rgba(248, 113, 113, 0.12); }
+
+    /* 4x4 FEATURE MAP GRID */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 46px);
+      grid-template-rows: repeat(4, 46px);
+      gap: 4px;
+      padding: 8px;
+      background: #05100c;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .feature-cell {
+      width: 46px;
+      height: 46px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      transition: all 0.2s ease;
+    }
+
+    .feature-cell.active-target {
+      border: 2px solid var(--emerald);
+      box-shadow: 0 0 15px var(--emerald-glow);
+      transform: scale(1.08);
+      z-index: 5;
+    }
+
+    /* RIGHT COLUMN: CALCULATION & MATH EXPLAINER */
+    .math-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .explanation-box {
+      background: #071913;
+      border-left: 4px solid var(--gold);
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.95rem;
+    }
+
+    .explanation-box h4 {
+      color: var(--gold);
+      margin-bottom: 4px;
+      font-size: 1rem;
+    }
+
+    .math-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      background: #05120d;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .math-table th, .math-table td {
+      padding: 8px 12px;
+      text-align: center;
+      border-bottom: 1px solid #143528;
+    }
+
+    .math-table th {
+      background: #0f2b20;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .val-leaf { color: #4ade80; font-weight: 700; }
+    .val-soil { color: #d97706; font-weight: 700; }
+    .val-pos { color: #38bdf8; font-weight: 700; }
+    .val-neg { color: #fb7185; font-weight: 700; }
+
+    .sum-box {
+      background: linear-gradient(135deg, #092419, #154531);
+      border: 1px solid var(--emerald);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sum-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .sum-formula {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .sum-result {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #34d399;
+      text-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+    }
+
+    /* CONTROLS UNDER WORKSPACE */
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #1a4a39;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      background: var(--emerald);
+      color: #04140c;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: #34d399;
+      transform: translateY(-1px);
+      box-shadow: 0 0 12px var(--emerald-glow);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-white);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--emerald);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* FINAL STAGE: FROM MAP TO NUMBER */
+    .final-stage-card {
+      margin-top: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+
+    .pipeline-flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .pipeline-flow {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .flow-step {
+      background: #091c15;
+      border: 1px solid #1a4435;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      position: relative;
+    }
+
+    .flow-step h5 {
+      color: var(--gold);
+      font-size: 0.88rem;
+      margin-bottom: 6px;
+    }
+
+    .flow-step p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .yield-meter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #facc15;
+      margin-top: 8px;
+      text-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
+    }
+
+    .status-alert {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .status-good { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .status-bad { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">MaizeSight Interactive Guide</div>
+      <h1>How a CNN Turns Drone Pixels into Crop Yield</h1>
+      <p class="subtitle">See how the computer takes numbers between 0 and 1, slides a 3×3 pattern detector over them, and calculates your corn harvest!</p>
+    </header>
+
+    <!-- STEP NAVIGATION -->
+    <div class="step-nav">
+      <button class="step-btn active" id="btn-step-1" onclick="selectPreset(1, 1)">
+        <span class="step-number">1</span> Position 1: Leaf Ending on Soil (Edge Detected)
+      </button>
+      <button class="step-btn" id="btn-step-2" onclick="selectPreset(0, 0)">
+        <span class="step-number">2</span> Position 2: Pure Green Leaf (Flat Leaf)
+      </button>
+      <button class="step-btn" id="btn-step-3" onclick="selectPreset(3, 3)">
+        <span class="step-number">3</span> Position 3: Pure Bare Soil (No Plants)
+      </button>
+      <button class="step-btn" id="btn-auto" onclick="toggleAutoPlay()">
+        ▶ Auto Slide Filter
+      </button>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="workspace">
+
+      <!-- LEFT COLUMN: VISUAL GRIDS -->
+      <div class="card">
+        <div class="card-title">
+          <span>1. The Drone Image & The 3×3 Sliding Filter</span>
+          <span class="tag" id="position-tag">Window: Row 2, Col 2</span>
+        </div>
+
+        <div class="grids-container">
+          <!-- 6x6 IMAGE GRID -->
+          <div class="grid-wrapper">
+            <div class="grid-label">Drone Image (6×6 Decimals: 0 to 1)</div>
+            <div class="pixel-grid" id="pixelGrid">
+              <!-- Sliding Golden Box -->
+              <div class="kernel-window" id="kernelWindow"></div>
+              <!-- 36 Cells Generated via JS -->
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;">
+              🟢 Green = Corn Leaf (0.7 - 0.9) | 🟤 Brown = Dark Soil (0.1 - 0.2)
+            </div>
+          </div>
+
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--gold);">★</div>
+
+          <!-- 3x3 FILTER GRID -->
+          <div class="grid-wrapper">
+            <div class="grid-label">Horizontal Edge Filter (3×3)</div>
+            <div class="filter-grid">
+              <div class="filter-cell filter-pos">+1</div>
+              <div class="filter-cell filter-pos">+1</div>
+              <div class="filter-cell filter-pos">+1</div>
+              <div class="filter-cell filter-zero">0</div>
+              <div class="filter-cell filter-zero">0</div>
+              <div class="filter-cell filter-zero">0</div>
+              <div class="filter-cell filter-neg">-1</div>
+              <div class="filter-cell filter-neg">-1</div>
+              <div class="filter-cell filter-neg">-1</div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;">
+              Looks for Top-to-Bottom Transitions
+            </div>
+          </div>
+
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--emerald);">=</div>
+
+          <!-- 4x4 RESULT FEATURE MAP -->
+          <div class="grid-wrapper">
+            <div class="grid-label">Output Feature Map (4×4 Scores)</div>
+            <div class="feature-grid" id="featureGrid">
+              <!-- 16 Cells Generated via JS -->
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;">
+              High number = Edge Found Here!
+            </div>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">
+            💡 <strong>Tip:</strong> Click on any cell in the 4×4 Output Map to move the filter there!
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" onclick="moveFilterRelative(-1, 0)">▲ Up</button>
+            <button class="btn-secondary" onclick="moveFilterRelative(1, 0)">▼ Down</button>
+            <button class="btn-secondary" onclick="moveFilterRelative(0, -1)">◄ Left</button>
+            <button class="btn-secondary" onclick="moveFilterRelative(0, 1)">► Right</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: THE STEP-BY-STEP MATH EXPLAINER -->
+      <div class="card math-panel">
+        <div class="card-title">
+          <span>2. Live "Multiply & Add" Math</span>
+          <span class="tag" style="border-color: var(--emerald); color: var(--emerald);">Step 2 Mechanics</span>
+        </div>
+
+        <div class="explanation-box" id="explanationText">
+          <h4>What is happening right now?</h4>
+          <p id="explMessage">
+            The filter is resting on the edge between a corn leaf and soil. Notice how the top row has high positive numbers (+2.4) and the bottom row cancels out the soil (-0.3), giving a strong positive result!
+          </p>
+        </div>
+
+        <!-- 9-ELEMENT MATH TABLE -->
+        <table class="math-table">
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Image Pixel</th>
+              <th>Filter Weight</th>
+              <th>Multiply (×)</th>
+            </tr>
+          </thead>
+          <tbody id="mathTableBody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+
+        <!-- TOTAL SUM BOX -->
+        <div class="sum-box">
+          <div>
+            <div class="sum-title">Total 9-Pixel Sum</div>
+            <div class="sum-formula" id="sumFormula">Sum of all 9 multiplications</div>
+          </div>
+          <div class="sum-result" id="sumResultVal">+2.10</div>
+        </div>
+
+        <!-- ACTIVATION STEP (RELU) -->
+        <div style="background: #091f17; border-radius: 8px; padding: 12px 14px; border: 1px solid var(--border);">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--emerald); margin-bottom: 4px;">
+            Step 3: What if the sum is Negative? (Activation Rule)
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);" id="activationExpl">
+            If the score is <strong>positive (+2.10)</strong>, the computer keeps it! If it's <strong>negative</strong>, it turns into <strong>0.00</strong> because negative means no leaf edge was found.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- STAGE 3: HOW THOSE NUMBERS BECOME A FINAL YIELD -->
+    <div class="final-stage-card">
+      <div class="card-title">
+        <span>3. From Clues to the Final Number: How We Get Bushels/Acre</span>
+        <span class="tag" style="border-color: #38bdf8; color: #38bdf8;">Final Output</span>
+      </div>
+
+      <div class="pipeline-flow">
+        <!-- 1. The Clues -->
+        <div class="flow-step">
+          <h5>1. Thousands of Clues</h5>
+          <p>The CNN slides 32 different filters across the image, gathering <strong>1,280 clue numbers</strong>.</p>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #38bdf8; margin-top: 6px;">
+            [1.24, 0.88, 2.10, -0.42, ...]
+          </div>
+        </div>
+
+        <!-- 2. The Plus Points -->
+        <div class="flow-step">
+          <h5>2. Plus Points (+)</h5>
+          <p>For every healthy clue (thick green canopy, full flowering tassels):</p>
+          <span class="status-alert status-good">+ Bonus Yield Points</span>
+        </div>
+
+        <!-- 3. The Minus Points -->
+        <div class="flow-step">
+          <h5>3. Minus Penalties (−)</h5>
+          <p>For every stress clue (bare patches, yellow dying leaves, drought gaps):</p>
+          <span class="status-alert status-bad">− Penalties Subtracted</span>
+        </div>
+
+        <!-- 4. Final Score -->
+        <div class="flow-step" style="border: 2px solid var(--gold);">
+          <h5>4. Final Harvest Number</h5>
+          <p>All points are totaled with the baseline field yield:</p>
+          <div class="yield-meter" id="finalYieldDisplay">164.8 bu/ac</div>
+          <span style="font-size: 0.72rem; color: var(--emerald); font-weight: 700;">Prediction Verified</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 6x6 MOCK CORN IMAGE PIXELS (0 to 1)
+    // Rows 0-1: Pure green leaf (0.8 - 0.95)
+    // Row 2: Leaf transition / edge (0.6 - 0.75)
+    // Rows 3-5: Dark brown soil (0.08 - 0.22)
+    const imageMatrix = [
+      [0.92, 0.88, 0.94, 0.90, 0.85, 0.89],
+      [0.85, 0.90, 0.88, 0.92, 0.86, 0.84],
+      [0.72, 0.68, 0.75, 0.70, 0.65, 0.60],
+      [0.15, 0.12, 0.18, 0.14, 0.11, 0.16],
+      [0.10, 0.08, 0.12, 0.09, 0.14, 0.11],
+      [0.12, 0.15, 0.09, 0.11, 0.08, 0.13]
+    ];
+
+    // 3x3 HORIZONTAL EDGE FILTER
+    const filterMatrix = [
+      [+1, +1, +1],
+      [ 0,  0,  0],
+      [-1, -1, -1]
+    ];
+
+    let currentR = 1; // Current top-left row of 3x3 window (0 to 3)
+    let currentC = 1; // Current top-left col of 3x3 window (0 to 3)
+    let autoPlayInterval = null;
+
+    // PRE-COMPUTE 4x4 FEATURE MAP
+    const featureMap = [];
+    for (let r = 0; r <= 3; r++) {
+      const row = [];
+      for (let c = 0; c <= 3; c++) {
+        let sum = 0;
+        for (let kr = 0; kr < 3; kr++) {
+          for (let kc = 0; kc < 3; kc++) {
+            sum += imageMatrix[r + kr][c + kc] * filterMatrix[kr][kc];
+          }
+        }
+        row.push(parseFloat(sum.toFixed(2)));
+      }
+      featureMap.push(row);
+    }
+
+    // INITIALIZE DOM
+    function init() {
+      renderPixelGrid();
+      renderFeatureGrid();
+      updateCalculation();
+    }
+
+    // Render 6x6 Image Grid
+    function renderPixelGrid() {
+      const grid = document.getElementById("pixelGrid");
+      // Remove any existing cells (keep window)
+      const existing = grid.querySelectorAll(".pixel-cell");
+      existing.forEach(e => e.remove());
+
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 6; c++) {
+          const val = imageMatrix[r][c];
+          const cell = document.createElement("div");
+          cell.className = "pixel-cell";
+          cell.id = `cell-${r}-${c}`;
+
+          // Color interpolate: green (high) vs brown (low)
+          if (val > 0.5) {
+            const greenIntensity = Math.floor(val * 160 + 30);
+            cell.style.background = `rgb(20, ${greenIntensity}, 50)`;
+            cell.innerHTML = `<span>${val.toFixed(2)}</span><span class="type-lbl" style="color:#86efac;">Leaf</span>`;
+          } else {
+            const soilIntensity = Math.floor(val * 120 + 20);
+            cell.style.background = `rgb(${soilIntensity + 30}, ${soilIntensity}, 15)`;
+            cell.innerHTML = `<span>${val.toFixed(2)}</span><span class="type-lbl" style="color:#d97706;">Soil</span>`;
+          }
+
+          // Allow clicking on image to position window
+          cell.addEventListener("click", () => {
+            const targetR = Math.min(3, Math.max(0, r - 1));
+            const targetC = Math.min(3, Math.max(0, c - 1));
+            moveTo(targetR, targetC);
+          });
+
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    // Render 4x4 Output Feature Grid
+    function renderFeatureGrid() {
+      const grid = document.getElementById("featureGrid");
+      grid.innerHTML = "";
+
+      for (let r = 0; r <= 3; r++) {
+        for (let c = 0; c <= 3; c++) {
+          const val = featureMap[r][c];
+          const cell = document.createElement("div");
+          cell.className = "feature-cell";
+          cell.id = `feat-${r}-${c}`;
+          cell.textContent = val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2);
+
+          // Heatmap coloring
+          if (val > 1.5) {
+            cell.style.background = "#10b981"; // Bright Emerald (Strong Edge!)
+            cell.style.color = "#042f1d";
+            cell.style.fontWeight = "800";
+          } else if (val > 0.5) {
+            cell.style.background = "#065f46"; // Medium Green
+            cell.style.color = "#a7f3d0";
+          } else if (val >= 0) {
+            cell.style.background = "#1e293b"; // Neutral Gray
+            cell.style.color = "#94a3b8";
+          } else {
+            cell.style.background = "#450a0a"; // Dark Red (Negative)
+            cell.style.color = "#fca5a5";
+          }
+
+          cell.addEventListener("click", () => moveTo(r, c));
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    // Move 3x3 Window to (r, c)
+    function moveTo(r, c) {
+      currentR = r;
+      currentC = c;
+      updateCalculation();
+    }
+
+    function moveFilterRelative(dr, dc) {
+      const newR = Math.min(3, Math.max(0, currentR + dr));
+      const newC = Math.min(3, Math.max(0, currentC + dc));
+      moveTo(newR, newC);
+    }
+
+    function selectPreset(r, c) {
+      if (autoPlayInterval) toggleAutoPlay();
+      moveTo(r, c);
+    }
+
+    // Update Window Position and Recalculate Math
+    function updateCalculation() {
+      // 1. Position Window
+      const windowElem = document.getElementById("kernelWindow");
+      const cellSize = 48;
+      const gap = 3;
+      const padding = 8;
+      const topPx = padding + currentR * (cellSize + gap) - 4;
+      const leftPx = padding + currentC * (cellSize + gap) - 4;
+      windowElem.style.top = `${topPx}px`;
+      windowElem.style.left = `${leftPx}px`;
+
+      // 2. Highlight target feature cell
+      document.querySelectorAll(".feature-cell").forEach(e => e.classList.remove("active-target"));
+      const targetFeat = document.getElementById(`feat-${currentR}-${currentC}`);
+      if (targetFeat) targetFeat.classList.add("active-target");
+
+      document.getElementById("position-tag").textContent = `Window: Row ${currentR + 1}, Col ${currentC + 1}`;
+
+      // 3. Compute 9 multiplications and build table
+      const tbody = document.getElementById("mathTableBody");
+      tbody.innerHTML = "";
+      let totalSum = 0;
+
+      const rowNames = ["Top-Left", "Top-Mid", "Top-Right", "Mid-Left", "Center", "Mid-Right", "Bot-Left", "Bot-Mid", "Bot-Right"];
+      let idx = 0;
+
+      for (let kr = 0; kr < 3; kr++) {
+        for (let kc = 0; kc < 3; kc++) {
+          const pixelVal = imageMatrix[currentR + kr][currentC + kc];
+          const filterVal = filterMatrix[kr][kc];
+          const mult = pixelVal * filterVal;
+          totalSum += mult;
+
+          const tr = document.createElement("tr");
+
+          // Styling labels
+          const isLeaf = pixelVal > 0.5;
+          const pixelClass = isLeaf ? "val-leaf" : "val-soil";
+          const multClass = mult > 0 ? "val-pos" : (mult < 0 ? "val-neg" : "");
+
+          tr.innerHTML = `
+            <td>${rowNames[idx++]}</td>
+            <td class="${pixelClass}">${pixelVal.toFixed(2)} (${isLeaf ? 'Leaf' : 'Soil'})</td>
+            <td><strong>${filterVal > 0 ? '+' + filterVal : filterVal}</strong></td>
+            <td class="${multClass}">${mult > 0 ? '+' + mult.toFixed(2) : mult.toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      }
+
+      // 4. Update Summary Numbers
+      const sumRounded = parseFloat(totalSum.toFixed(2));
+      const sumElem = document.getElementById("sumResultVal");
+      sumElem.textContent = sumRounded > 0 ? `+${sumRounded.toFixed(2)}` : sumRounded.toFixed(2);
+      sumElem.style.color = sumRounded > 1.0 ? "#34d399" : (sumRounded > 0 ? "#38bdf8" : "#f87171");
+
+      // 5. Update Explanatory Text based on current position
+      const explMsg = document.getElementById("explMessage");
+      const actExpl = document.getElementById("activationExpl");
+      const yieldDisp = document.getElementById("finalYieldDisplay");
+
+      if (currentR === 1) {
+        explMsg.innerHTML = `<strong>Aha! Clear Edge Found:</strong> The top row has bright green leaves (<span style="color:#4ade80;">~0.88 × +1</span>) and the bottom row has dark soil (<span style="color:#d97706;">~0.15 × -1</span>). Because leaf and soil contrast sharply, the sum is a big positive number (<strong>+${sumRounded.toFixed(2)}</strong>). The CNN registers this as a clear plant boundary!`;
+        actExpl.innerHTML = `Since <strong>+${sumRounded.toFixed(2)}</strong> is positive, it passes directly through to the next layer to help calculate leaf area.`;
+        yieldDisp.textContent = "168.4 bu/ac";
+      } else if (currentR === 0) {
+        explMsg.innerHTML = `<strong>Flat Leaf Region:</strong> The window is covering almost all green leaf (top row ~0.90, bottom row ~0.72). The positive top (+2.74) and negative bottom (-2.18) cancel each other out, leaving only <strong>+${sumRounded.toFixed(2)}</strong>. This tells the CNN: <em>"No edge here, just a solid green leaf."</em>`;
+        actExpl.innerHTML = `The number <strong>+${sumRounded.toFixed(2)}</strong> is positive but small. It indicates steady canopy cover.`;
+        yieldDisp.textContent = "172.1 bu/ac";
+      } else if (currentR >= 2) {
+        explMsg.innerHTML = `<strong>Bare Soil Region:</strong> Both top and bottom pixels are very low soil numbers (~0.12). The math results in near zero or a negative value (<strong>${sumRounded.toFixed(2)}</strong>). The CNN says: <em>"Zero crop foliage here!"</em>`;
+        actExpl.innerHTML = `Because the result is <strong>${sumRounded.toFixed(2)}</strong> (near zero or negative), the activation function clamps it to <strong>0.00</strong>. It ignores this bare soil noise.`;
+        yieldDisp.textContent = "124.6 bu/ac";
+      }
+
+      // Update button active state
+      document.getElementById("btn-step-1").classList.toggle("active", currentR === 1 && currentC === 1);
+      document.getElementById("btn-step-2").classList.toggle("active", currentR === 0 && currentC === 0);
+      document.getElementById("btn-step-3").classList.toggle("active", currentR === 3 && currentC === 3);
+    }
+
+    // AUTO PLAY
+    function toggleAutoPlay() {
+      const btn = document.getElementById("btn-auto");
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        btn.textContent = "▶ Auto Slide Filter";
+        btn.classList.remove("active");
+      } else {
+        btn.textContent = "⏸ Pause Auto Slide";
+        btn.classList.add("active");
+        autoPlayInterval = setInterval(() => {
+          let nextC = currentC + 1;
+          let nextR = currentR;
+          if (nextC > 3) {
+            nextC = 0;
+            nextR = currentR + 1;
+            if (nextR > 3) nextR = 0;
+          }
+          moveTo(nextR, nextC);
+        }, 1200);
+      }
+    }
+
+    // Launch
+    window.onload = init;
+  </script>
+</body>
+</html>

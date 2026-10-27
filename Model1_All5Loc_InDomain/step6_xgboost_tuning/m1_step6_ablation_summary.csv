@@ -1,0 +1,6 @@
+Model_Stage,Val_RMSE,Val_MAE,Val_R2,Val_WithinLoc_r,Test_RMSE,Test_MAE,Test_R2,Test_Overall_r,Test_WithinLoc_r
+1. Step 5 Baseline Hybrid (113 Feats),19.8049,15.0413,0.8748,0.7471,21.0053,16.6672,0.8436,0.9185,0.6503
+2. Step 6 Tuned Core-View Specialist (88 Core Feats),20.1824,15.3442,0.87,0.7353,21.1663,16.7305,0.8412,0.9172,0.6434
+3. Step 6 Tuned Full-View mRMR Ensemble (113 Feats),20.0258,15.2248,0.872,0.7411,21.3452,16.9011,0.8385,0.9158,0.6355
+4. Step 6 Physical & Site-Interaction Booster (140 Phys Feats),20.4273,15.4566,0.8668,0.7283,21.6379,17.09,0.834,0.9133,0.6232
+"5. STEP 6 FINAL 3-VIEW STACKED ENSEMBLE (w=0.37/0.45/0.18, g=1.060)",20.0212,15.2008,0.8721,0.7395,21.4016,16.9375,0.8376,0.9154,0.6384

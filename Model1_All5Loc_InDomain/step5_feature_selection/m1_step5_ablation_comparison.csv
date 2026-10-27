@@ -1,0 +1,6 @@
+Feature_Set,Num_Features,Val_RMSE,Val_MAE,Val_R2,Test_RMSE,Test_MAE,Test_R2,Test_Overall_r,Test_WithinLoc_r
+0. Step 4 Full Baseline (PCA + Metadata),244,21.7677,16.2327,0.8488,22.9137,18.0525,0.8139,0.9022,0.5645
+1. Step 5 Core Multimodal (Pedigree + Bio + Spatial + OOF Prototypes),88,19.9937,15.2143,0.8724,20.8817,16.5349,0.8454,0.9195,0.656
+2. Step 5 Core + Top-25 mRMR CNN Channels,113,19.8049,15.0413,0.8748,21.0053,16.6672,0.8436,0.9185,0.6503
+3. Step 5 Core + Top-50 mRMR CNN Channels,138,19.923,15.1346,0.8733,21.1994,16.8559,0.8407,0.9169,0.642
+4. Step 5 Core + Top-90 mRMR CNN Channels,178,20.107,15.199,0.871,21.3087,16.906,0.839,0.916,0.6382

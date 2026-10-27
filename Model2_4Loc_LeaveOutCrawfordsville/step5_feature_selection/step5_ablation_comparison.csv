@@ -1,0 +1,7 @@
+Feature_Set,Num_Features,Val_RMSE,Val_MAE,Val_R2,ZeroShot_Test_RMSE,ZeroShot_Test_MAE,ZeroShot_Test_R2,Test_Pearson_r,Calibrated_RMSE,Calibrated_R2
+0. Step 4 Full Baseline (PCA + PlantingDate),244,23.8121,17.7406,0.8184,49.6744,41.5118,-3.0518,0.2077,37.8704,-1.3436
+1. Step 5 Physical Anchor Baseline Only,150,24.908,18.6482,0.8013,30.5571,23.9065,-0.5332,0.0499,26.4113,-0.1399
+2. Step 5 Upgraded Core (LOLO-Prototypes + Spatial + Canopy + Gen),77,22.7374,17.2435,0.8344,27.6063,22.0116,-0.2514,0.4251,22.3594,0.183
+3. Step 5 Upgraded Core + Top-25 mRMR CNN Channels,102,22.7427,17.0784,0.8343,27.6362,22.0826,-0.2541,0.423,22.3866,0.1811
+4. Step 5 Upgraded Core + Top-50 mRMR CNN Channels,127,22.7201,17.0478,0.8347,27.6314,22.0194,-0.2537,0.421,22.4059,0.1796
+5. Step 5 Upgraded Core + Top-90 mRMR CNN Channels,167,22.6024,16.9229,0.8364,27.6286,22.0588,-0.2534,0.4222,22.3713,0.1822
